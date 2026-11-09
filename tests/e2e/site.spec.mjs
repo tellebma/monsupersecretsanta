@@ -28,18 +28,26 @@ async function assertAccessible(page) {
   expect(violations.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target }) => target) }))).toEqual([]);
 }
 
-test("accueil public, responsive et accessible, espace protégé", async ({ page, request }) => {
+test("accueil public, responsive et espace protégé", async ({ page, request }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("sans les doublons");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await assertAccessible(page);
   await page.getByRole("link", { name: "Se connecter" }).click();
   await expect(page.getByRole("heading", { name: "Se connecter" })).toBeVisible();
-  await assertAccessible(page);
   await page.goto("/groupes");
   await expect(page).toHaveURL(/\/connexion$/);
   expect((await request.post("/api/schedule")).status()).toBe(401);
   expect((await request.post("/api/schedule", { headers: { Authorization: "Bearer invalide" } })).status()).toBe(401);
+});
+
+test("accessibilité WCAG de l’accueil", async ({ page }) => {
+  await page.goto("/");
+  await assertAccessible(page);
+});
+
+test("accessibilité WCAG de la connexion", async ({ page }) => {
+  await page.goto("/connexion");
+  await assertAccessible(page);
 });
 
 test("crée un compte avec le code du mail, définit le mot de passe et se reconnecte", async ({ page, request }) => {
