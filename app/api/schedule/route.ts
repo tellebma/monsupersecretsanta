@@ -27,7 +27,7 @@ function textFor({ kind, payload }: Mail): [string, string] {
 
 async function send(job: Mail) {
   const [subject, text] = textFor(job);
-  const response = await fetch("https://api.resend.com/emails", {
+  const response = await fetch(process.env.RESEND_API_URL ?? "https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,

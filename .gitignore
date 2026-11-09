@@ -5,3 +5,6 @@ node_modules/
 !.env.example
 *.tsbuildinfo
 supabase/.temp/
+supabase/.branches/
+playwright-report/
+test-results/

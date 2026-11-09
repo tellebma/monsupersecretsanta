@@ -1,0 +1,149 @@
+import { randomUUID } from "node:crypto";
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { demoEmail, localPassword } from "../../scripts/preprod-data.mjs";
+
+async function signIn(page, person) {
+  await page.goto("/connexion");
+  await page.getByLabel("Adresse mail").fill(demoEmail(person));
+  await page.getByLabel("Mot de passe", { exact: true }).fill(localPassword);
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await expect(page).toHaveURL(/\/groupes$/);
+  await expect(page.getByRole("heading", { name: "Mes groupes" })).toBeVisible();
+}
+
+async function openGroup(page, name) {
+  const group = page.getByRole("article").filter({ has: page.getByRole("heading", { name, exact: true }) }).first();
+  await group.getByRole("link", { name: "Ouvrir le groupe" }).click();
+  await expect(page.getByRole("heading", { name, exact: true, level: 1 })).toBeVisible();
+}
+
+function gift(page, title) {
+  return page.getByRole("article").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+}
+
+async function assertAccessible(page) {
+  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  expect(violations.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target }) => target) }))).toEqual([]);
+}
+
+test("accueil public, responsive et accessible, espace protégé", async ({ page, request }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("sans les doublons");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await assertAccessible(page);
+  await page.getByRole("link", { name: "Se connecter" }).click();
+  await expect(page.getByRole("heading", { name: "Se connecter" })).toBeVisible();
+  await assertAccessible(page);
+  await page.goto("/groupes");
+  await expect(page).toHaveURL(/\/connexion$/);
+  expect((await request.post("/api/schedule")).status()).toBe(401);
+  expect((await request.post("/api/schedule", { headers: { Authorization: "Bearer invalide" } })).status()).toBe(401);
+});
+
+test("crée un compte avec le code du mail, définit le mot de passe et se reconnecte", async ({ page, request }) => {
+  const email = demoEmail(`acceptation-${randomUUID().slice(0, 12)}`);
+  await page.goto("/connexion?mode=signup");
+  await page.getByLabel("Adresse mail").fill(email);
+  await page.getByRole("button", { name: "Recevoir un code" }).click();
+  await expect(page.getByLabel("Code reçu par mail")).toBeVisible();
+  const mailpit = process.env.TEST_MAILPIT_URL;
+  let mailId;
+  await expect.poll(async () => {
+    const response = await request.get(`${mailpit}/api/v1/search`, { params: { query: `to:${email}` } });
+    mailId = (await response.json()).messages?.[0]?.ID;
+    return Boolean(mailId);
+  }).toBe(true);
+  const response = await request.get(`${mailpit}/api/v1/message/${mailId}`);
+  const message = await response.json();
+  const code = `${message.Text} ${message.HTML}`.match(/\b\d{6}\b/)?.[0];
+  expect(code).toBeTruthy();
+  await page.getByLabel("Code reçu par mail").fill(code);
+  await page.getByRole("button", { name: "Vérifier le code" }).click();
+  await expect(page.getByLabel("Nouveau mot de passe")).toBeVisible();
+  await page.getByLabel("Nouveau mot de passe").fill(localPassword);
+  await page.getByLabel("Confirmer le mot de passe").fill(localPassword);
+  await page.getByRole("button", { name: "Enregistrer mon mot de passe" }).click();
+  await expect(page).toHaveURL(/\/groupes$/);
+  await page.getByRole("button", { name: "Déconnexion" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/connexion");
+  await page.getByLabel("Adresse mail").fill(email);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(localPassword);
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Ton premier Secret Santa" })).toBeVisible();
+});
+
+test("voit uniquement son tirage et les statuts partagés entre groupes", async ({ page, browser }) => {
+  await signIn(page, "camille");
+  await openGroup(page, "Noël en famille");
+  const reveal = page.getByRole("button", { name: "Tirer au sort" });
+  if (await reveal.isVisible()) {
+    await expect(page.getByText("Tu offres un cadeau à Léa")).toHaveCount(0);
+    await reveal.click();
+  }
+  await expect(page.getByRole("heading", { name: "Tu offres un cadeau à Léa" })).toBeVisible();
+  await expect(gift(page, "Casque audio")).toContainText("Indisponible");
+  await expect(gift(page, "Tasse en grès")).toContainText("Déjà acheté");
+  await expect(gift(page, "Livre illustré").getByRole("link", { name: /Voir le produit/ })).toHaveCount(2);
+
+  const other = await browser.newPage();
+  try {
+    await signIn(other, "nora");
+    await openGroup(other, "Noël entre amis");
+    await gift(page, "Livre illustré").getByRole("button", { name: "Réserver ce cadeau" }).click();
+    await expect(gift(page, "Livre illustré")).toContainText("Réservé par toi");
+    await other.reload();
+    await expect(gift(other, "Livre illustré")).toContainText("Indisponible");
+    await expect(gift(other, "Livre illustré").getByRole("button")).toHaveCount(0);
+  } finally {
+    const release = gift(page, "Livre illustré").getByRole("button", { name: "Libérer la réservation" });
+    if (await release.isVisible()) {
+      await release.click();
+      await expect(gift(page, "Livre illustré").getByRole("button", { name: "Réserver ce cadeau" })).toBeVisible();
+    }
+    await other.close();
+  }
+});
+
+test("ajoute deux liens manuellement, modifie puis retire une idée", async ({ page }) => {
+  await signIn(page, "lea");
+  await page.getByRole("link", { name: "Ma liste", exact: true }).click();
+  await expect(gift(page, "Tasse en grès")).not.toContainText("Déjà acheté");
+  await page.getByRole("link", { name: "Ajouter un cadeau" }).click();
+  const title = `Idée de test ${randomUUID().slice(0, 8)}`;
+  await page.getByLabel("Nom du cadeau").fill(title);
+  await page.getByLabel("Description", { exact: true }).fill("Une idée fictive pour les tests.");
+  for (const url of ["https://example.com/premier", "https://example.org/second"]) {
+    await page.getByLabel("Lien vers un produit").fill(url);
+    await page.getByRole("button", { name: "Ajouter le lien" }).click();
+    await expect(page.getByRole("status")).toContainText("Lien ajouté");
+  }
+  await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
+  await expect(gift(page, title).getByRole("link", { name: /Voir le produit/ })).toHaveCount(2);
+  await gift(page, title).getByRole("link", { name: "Modifier" }).click();
+  await page.getByRole("textbox", { name: "Description", exact: true }).fill("Description modifiée.");
+  await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
+  await expect(gift(page, title)).toContainText("Description modifiée.");
+  await gift(page, title).getByRole("button", { name: "Retirer de ma liste" }).click();
+  await expect(gift(page, title)).toHaveCount(0);
+});
+
+test("crée un groupe, met une invitation en attente et refuse un tirage incomplet", async ({ page }) => {
+  await signIn(page, "camille");
+  await page.getByRole("link", { name: "Créer un groupe" }).click();
+  const name = `Groupe QA ${randomUUID().slice(0, 8)}`;
+  const localDate = (days) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 16);
+  await page.getByLabel("Nom du groupe").fill(name);
+  await page.getByLabel("Date et heure du tirage").fill(localDate(3));
+  await page.getByLabel("Date et heure de l’échange").fill(localDate(9));
+  await page.getByLabel("Budget total indicatif (€)").fill("35");
+  await page.getByRole("button", { name: "Créer l’édition" }).click();
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+  const email = demoEmail("invitation-qa");
+  await page.getByLabel("Adresses mail").fill(email);
+  await page.getByRole("button", { name: "Envoyer les invitations" }).click();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Valider et programmer" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "au moins deux participants" })).toBeVisible();
+});
