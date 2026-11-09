@@ -14,6 +14,27 @@ test("finds valid draws and reports impossible constraints", () => {
   assert.equal(drawAssignments(["a", "b"], [["a", "b"]]), null);
 });
 
+test("matches every feasible graph of four participants", () => {
+  const members = ["a", "b", "c", "d"];
+  const edges = members.flatMap((giver) => members.filter((receiver) => giver !== receiver).map((receiver) => [giver, receiver]));
+  function possible(allowed, index = 0, receivers = new Set()) {
+    if (index === members.length) return true;
+    return allowed.some(([giver, receiver]) => giver === members[index] && !receivers.has(receiver) &&
+      possible(allowed, index + 1, new Set([...receivers, receiver])));
+  }
+  for (let mask = 0; mask < 2 ** edges.length; mask++) {
+    const blocked = edges.filter((_, index) => mask & (1 << index));
+    const allowed = edges.filter((_, index) => !(mask & (1 << index)));
+    const result = drawAssignments(members, blocked);
+    assert.equal(Boolean(result), possible(allowed), `graph ${mask}`);
+    if (result) {
+      assert.equal(new Set(result.map(({ giver }) => giver)).size, members.length);
+      assert.equal(new Set(result.map(({ receiver }) => receiver)).size, members.length);
+      assert.ok(result.every(({ giver, receiver }) => allowed.some(([a, b]) => a === giver && b === receiver)));
+    }
+  }
+});
+
 test("uses Paris time and rejects a nonexistent local time", () => {
   assert.equal(parisInstant("2026-12-24T18:00"), "2026-12-24T17:00:00.000Z");
   assert.equal(parisInstant("2027-06-01T18:00"), "2027-06-01T16:00:00.000Z");

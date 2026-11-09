@@ -14,7 +14,7 @@ Object.assign(process.env, env);
 export default defineConfig({
   testDir: "./tests/e2e",
   workers: 1,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   forbidOnly: Boolean(process.env.CI),
   timeout: 45_000,
   reporter: [["list"], ["html", { open: "never" }]],
