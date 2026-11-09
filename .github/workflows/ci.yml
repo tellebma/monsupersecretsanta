@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, preprod]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  quality:
+    name: Build et sécurité
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run build
+
+  unit:
+    name: Tests unitaires et SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  acceptance:
+    name: Acceptation · ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            engine: chromium
+          - browser: firefox
+            engine: firefox
+          - browser: webkit
+            engine: webkit
+          - browser: mobile
+            engine: chromium
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: npm run preprod:local
+      - run: npm run build:preprod
+      - run: npm run test:e2e -- --project=${{ matrix.browser }}
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: playwright-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  required:
+    name: Validation CI
+    if: always()
+    needs: [quality, unit, acceptance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Vérifier les résultats
+        env:
+          QUALITY: ${{ needs.quality.result }}
+          UNIT: ${{ needs.unit.result }}
+          ACCEPTANCE: ${{ needs.acceptance.result }}
+        run: test "$QUALITY" = success && test "$UNIT" = success && test "$ACCEPTANCE" = success
+
+  deployment:
+    name: Vérifier le déploiement Vercel
+    if: github.event_name == 'push'
+    needs: required
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Attendre le déploiement du commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 36); do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/status" --jq '.statuses[] | select(.context == "Vercel") | .state' | head -n 1)
+            case "$state" in
+              success) exit 0 ;;
+              error|failure) exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "Le déploiement Vercel n’a pas terminé dans le délai imparti."
+          exit 1
+      - name: Vérifier le site public et ses routes
+        if: github.ref_name == 'main'
+        env:
+          SITE: https://monsupersecretsanta.vercel.app
+        run: |
+          curl --fail --silent --show-error "$SITE/" > /tmp/santa-home.html
+          grep -q 'Mon Super Secret Santa' /tmp/santa-home.html
+          curl --fail --silent --show-error "$SITE/connexion" > /tmp/santa-login.html
+          grep -q 'Continuer avec' /tmp/santa-login.html
+          ! grep -q 'cours de configuration' /tmp/santa-login.html
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST "$SITE/api/schedule")" = 401
+      - name: Vérifier que la préproduction exige une connexion
+        if: github.ref_name == 'preprod'
+        env:
+          SITE: https://monsupersecretsanta-git-preprod-tellebma.vercel.app
+        run: |
+          status=$(curl --silent --show-error --dump-header /tmp/santa-preview-headers --output /dev/null --write-out '%{http_code}' "$SITE/")
+          if [ "$status" != 401 ]; then
+            test "$status" = 302
+            grep -qi '^location: https://vercel.com/sso-api?' /tmp/santa-preview-headers
+          fi
