@@ -1,9 +1,8 @@
-import { createServer } from "node:http";
-import { once } from "node:events";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import pg from "pg";
 import { demoEmail } from "../../scripts/preprod-data.mjs";
+import { captureMail } from "./mail.mjs";
 
 const connect = async () => {
   const client = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });
@@ -13,16 +12,8 @@ const connect = async () => {
 
 test("exécute le tirage programmé et envoie les notifications sans dévoiler les attributions", async ({ request }) => {
   const db = await connect();
-  const messages = [];
-  const transport = createServer(async (req, res) => {
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    messages.push({ ...JSON.parse(Buffer.concat(chunks).toString()), key: req.headers["idempotency-key"] });
-    res.writeHead(200, { "Content-Type": "application/json" }).end('{"id":"fake-delivery"}');
-  });
-  transport.listen(3101, "127.0.0.1");
+  const transport = await captureMail();
   try {
-    await once(transport, "listening");
     const people = (await db.query("select id,email from auth.users where email=any($1) order by email", [
       [demoEmail("hugo"), demoEmail("jules"), demoEmail("lina")],
     ])).rows;
@@ -37,13 +28,12 @@ test("exécute le tirage programmé et envoie les notifications sans dévoiler l
       await db.query("insert into santa.members(edition_id,user_id,name,email) values($1,$2,$3,$4)",
         [edition, person.id, person.email.split("@")[0], person.email]);
     }
-    const headers = { Authorization: `Bearer ${process.env.SCHEDULE_SECRET}` };
-    expect((await request.post("/api/schedule", { headers })).status()).toBe(200);
-    expect((await request.post("/api/schedule", { headers })).status()).toBe(200);
+    await transport.deliver(request);
+    await transport.deliver(request);
     const draws = (await db.query("select giver_id,receiver_id,revealed from santa.draws where edition_id=$1", [edition])).rows;
     expect(draws).toHaveLength(3);
     expect(draws.every((draw) => draw.giver_id !== draw.receiver_id && !draw.revealed)).toBe(true);
-    const notifications = messages.filter(({ subject }) => subject.includes(name));
+    const notifications = transport.messages.filter(({ subject }) => subject.includes(name));
     expect(notifications).toHaveLength(3);
     expect(new Set(notifications.map(({ key }) => key)).size).toBe(3);
     for (const message of notifications) {
@@ -53,8 +43,7 @@ test("exécute le tirage programmé et envoie les notifications sans dévoiler l
     const queued = await db.query("select kind,count(*)::int as count from santa.outbox where payload->>'edition'=$1 group by kind order by kind", [edition]);
     expect(queued.rows).toEqual([{ kind: "empty", count: 3 }, { kind: "exchange", count: 3 }]);
   } finally {
-    transport.closeAllConnections();
-    await new Promise((resolve) => transport.close(resolve));
+    await transport.close();
     await db.end();
   }
 });

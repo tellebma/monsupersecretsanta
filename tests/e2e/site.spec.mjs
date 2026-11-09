@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { demoEmail, localPassword } from "../../scripts/preprod-data.mjs";
+import { captureMail } from "./mail.mjs";
 
 async function signIn(page, person) {
   await page.goto("/connexion");
@@ -129,7 +130,7 @@ test("ajoute deux liens manuellement, modifie puis retire une idée", async ({ p
   await expect(gift(page, title)).toHaveCount(0);
 });
 
-test("crée un groupe, met une invitation en attente et refuse un tirage incomplet", async ({ page }) => {
+test("crée un groupe, refuse un tirage incomplet et accepte une invitation avec une adresse différente", async ({ page, browser, request }) => {
   await signIn(page, "camille");
   await page.getByRole("link", { name: "Créer un groupe" }).click();
   const name = `Groupe QA ${randomUUID().slice(0, 8)}`;
@@ -146,4 +147,40 @@ test("crée un groupe, met une invitation en attente et refuse un tirage incompl
   await expect(page.getByText(email, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Valider et programmer" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "au moins deux participants" })).toBeVisible();
+
+  const mail = await captureMail();
+  const invitee = await browser.newPage();
+  try {
+    await mail.deliver(request);
+    const invitation = mail.messages.find(({ subject }) => subject.includes(name));
+    const link = invitation?.text.match(/\/invitation\/[a-f0-9]{64}/)?.[0];
+    expect(link).toBeTruthy();
+    await invitee.goto(link);
+    await expect(invitee).toHaveURL(/\/connexion\?next=/);
+    await invitee.getByLabel("Adresse mail").fill(demoEmail("hugo"));
+    await invitee.getByLabel("Mot de passe", { exact: true }).fill(localPassword);
+    await invitee.getByRole("button", { name: "Se connecter", exact: true }).click();
+    await expect(invitee.getByRole("heading", { name: "Rejoindre un Secret Santa" })).toBeVisible();
+    await invitee.getByLabel("Nom d’affichage").fill("Hugo QA");
+    await invitee.getByRole("button", { name: "Rejoindre le groupe" }).click();
+    await expect(invitee.getByLabel("Code envoyé à l’adresse invitée")).toBeVisible();
+    await mail.deliver(request);
+    const verification = mail.messages.find(({ subject, to }) => subject === "Ton code d’invitation" && to.includes(email));
+    const code = verification?.text.match(/\b[A-F0-9]{8}\b/)?.[0];
+    expect(code).toBeTruthy();
+    await invitee.getByLabel("Code envoyé à l’adresse invitée").fill(code);
+    await invitee.getByRole("button", { name: "Vérifier et rejoindre" }).click();
+    await expect(invitee.getByRole("heading", { name, level: 1 })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("checkbox", { name: `Hugo QA ${email}` })).toBeChecked();
+    await page.getByLabel("Nom d’affichage").fill("Camille QA");
+    await page.getByRole("button", { name: "M’ajouter aux participants" }).click();
+    await expect(page.getByRole("checkbox", { name: /^Camille QA/ })).toBeChecked();
+    await page.getByRole("button", { name: "Valider et programmer" }).click();
+    await expect(page.getByText("Tirage programmé", { exact: true })).toBeVisible();
+    await expect(page.getByText("Les inscriptions sont closes.", { exact: false })).toBeVisible();
+  } finally {
+    await invitee.close();
+    await mail.close();
+  }
 });
