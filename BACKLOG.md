@@ -26,7 +26,7 @@ Ces trois changements ont été livrés dans la [pull request 2](https://github.
 | --- | --- | --- |
 | P1 | Rapport des imports incomplets par marchand | [Requête SQL en lecture seule](supabase/reports/gift-import-failures.sql) avec le total des tentatives incomplètes, le nombre d’URL distinctes et la date de la dernière tentative incomplète. |
 | P1 | Fiches mode dans le catalogue intégré | Liens directs vers des produits H&M, Kiabi, Uniqlo et Zara, disponibles sans la recherche Brave. |
-| P1 | Mettre en avant la recherche de cadeaux | Bouton « Chercher un cadeau » sur la liste et écran dédié. Une fiche est proposée après sélection, avec un accès à l’import par lien si la recherche ne donne aucun résultat. |
+| P1 | Mettre en avant la recherche de cadeaux | Bouton « Chercher un cadeau » sur la liste et écran dédié. Des idées sont proposées dès l’ouverture. Une fiche est préremplie après sélection. Si la recherche ne donne aucun résultat, l’import par lien et d’autres idées restent disponibles. |
 
 ## Périmètre fonctionnel à préserver
 

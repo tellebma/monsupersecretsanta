@@ -17,6 +17,7 @@ async function openGiftSearch(page) {
   await page.getByRole("link", { name: "Chercher un cadeau", exact: true }).click();
   await expect(page).toHaveURL(/\/mes-cadeaux\/chercher$/);
   await expect(page.getByRole("heading", { name: "Chercher un cadeau", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Idées cadeaux à découvrir" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveCount(0);
 }
 
@@ -69,6 +70,7 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("objet introuvable");
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Aucun produit trouvé." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Autres idées cadeaux" })).toBeVisible();
   await page.getByRole("link", { name: "Tu as un lien vers le produit ?" }).click();
   await expect(page).toHaveURL(/\/mes-cadeaux\/nouveau#gift-product-link$/);
 
@@ -110,7 +112,13 @@ test("enregistre un cadeau manuel avec le nom seul", async ({ page }) => {
 test("le catalogue renvoie des fiches marchandes uniquement aux comptes connectés", async ({ page }) => {
   const path = "/api/gift-search?q=skyjo";
   expect((await page.request.get(path)).status()).toBe(401);
-  await signIn(page);
+  await openGiftSearch(page);
+  await page.getByRole("button", { name: /Choisir STRIMMIG/ }).click();
+  await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(/STRIMMIG/);
+  await page.getByRole("searchbox", { name: "Nom du produit" }).fill("skyjo");
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "1 produit trouvé" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Choisir Skyjo/ })).toBeVisible();
   const response = await page.request.get(path);
   expect(response.ok()).toBe(true);
   expect(response.headers()["cache-control"]).toBe("private, no-store");
