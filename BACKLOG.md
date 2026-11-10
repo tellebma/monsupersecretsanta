@@ -28,6 +28,7 @@ Ces trois changements ont été livrés dans la [pull request 2](https://github.
 | P1 | Fiches mode dans le catalogue intégré | Liens directs vers des produits H&M, Kiabi, Uniqlo et Zara, disponibles sans la recherche Brave. |
 | P1 | Mettre en avant la recherche de cadeaux | Bouton « Chercher un cadeau » sur la liste et écran dédié. Des idées sont proposées dès l’ouverture. Une fiche est préremplie après sélection. Si la recherche ne donne aucun résultat, l’import par lien et d’autres idées restent disponibles. |
 | P1 | Clarifier le parcours de recherche sur mobile et ordinateur | Résultats en cartes, accès permanent à l’import par lien et repère pour retrouver la fiche en cours. |
+| P0 | Retrouver sa session à la réouverture du navigateur | Le cookie de session persiste et l’accueil affiche « Mon espace » quand la session est active. |
 
 ## Périmètre fonctionnel à préserver
 
