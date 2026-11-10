@@ -10,8 +10,8 @@ type SearchResult = {
   products: Link[];
 };
 
-export function GiftSearch({ disabled, importing, links, editorVisible, onChoose }: {
-  disabled: boolean; importing: boolean; links: Link[]; editorVisible: boolean; onChoose: (product: Link) => void;
+export function GiftSearch({ disabled, importing, links, editorVisible, suggestions = [], onChoose }: {
+  disabled: boolean; importing: boolean; links: Link[]; editorVisible: boolean; suggestions?: Link[]; onChoose: (product: Link) => void;
 }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult>();
@@ -49,6 +49,8 @@ export function GiftSearch({ disabled, importing, links, editorVisible, onChoose
   }
 
   const productLink = editorVisible ? "#gift-product-link" : "/mes-cadeaux/nouveau#gift-product-link";
+  const matches = result?.products;
+  const products = matches?.length ? matches : suggestions;
 
   return <section className={`panel ${styles.search}`} aria-label="Catalogue de cadeaux">
     <form role="search" aria-label="Recherche de cadeaux" className={styles.fields} onSubmit={search}>
@@ -72,12 +74,14 @@ export function GiftSearch({ disabled, importing, links, editorVisible, onChoose
       <p role="status">{result.status === "unavailable" ? "La recherche est temporairement indisponible." : "Aucun produit trouvé."}</p>
       <a href={productLink}>Tu as un lien vers le produit&nbsp;?</a>
     </div>}
-    {result && result.products.length > 0 && <>
-      <p role="status" className="hint">{result.products.length === 1 ? "1 produit trouvé" : `${result.products.length} produits trouvés`}</p>
-      {importing && <p role="status" className="hint">Import des informations du produit…</p>}
-      {links.length > 0 && <a className={styles.draftLink} href="#gift-editor">Voir la fiche cadeau</a>}
+    {importing && <p role="status" className="hint">Import des informations du produit…</p>}
+    {links.length > 0 && <a className={styles.draftLink} href="#gift-editor">Voir la fiche cadeau</a>}
+    {!searching && products.length > 0 && <>
+      {matches?.length
+        ? <p role="status" className="hint">{products.length === 1 ? "1 produit trouvé" : `${products.length} produits trouvés`}</p>
+        : <h2 className={styles.suggestionHeading}>{result ? "Autres idées cadeaux" : "Idées cadeaux à découvrir"}</h2>}
       <ul className={styles.results}>
-        {result.products.map((product) => {
+        {products.map((product) => {
           const image = safeProductImage(product.image);
           const url = safeLink(product.url);
           const retailer = url?.hostname.replace(/^www\d*\./, "");

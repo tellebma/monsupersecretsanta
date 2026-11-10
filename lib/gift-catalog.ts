@@ -155,3 +155,8 @@ export function findCatalogProducts(query: string, gifts: Gift[] = []) {
     .sort((a, b) => b.score - a.score)
     .map(({ product }) => product));
 }
+
+export function catalogSuggestions() {
+  return ["Skyjo", "tasse en grès", "sac de randonnée", "casque audio", "Lego", "bonnet Kiabi"]
+    .flatMap((query) => findCatalogProducts(query).slice(0, 1));
+}

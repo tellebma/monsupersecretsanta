@@ -105,7 +105,8 @@ function hasProductDetails(product: Link) {
   return Boolean(product.name && product.description && safeProductImage(product.image));
 }
 
-export function GiftForm({ action, gift, startWithSearch = false }: { action: Action; gift?: Gift; startWithSearch?: boolean }) {
+export function GiftForm({ action, gift, suggestions }: { action: Action; gift?: Gift; suggestions?: Link[] }) {
+  const startWithSearch = suggestions !== undefined;
   const [result, submit, saving] = useActionState(action, {});
   const [name, setName] = useState(gift?.name ?? "");
   const [description, setDescription] = useState(gift?.description ?? "");
@@ -169,7 +170,7 @@ export function GiftForm({ action, gift, startWithSearch = false }: { action: Ac
   }
 
   return <div className="stack">
-    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links}
+    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links} suggestions={suggestions}
       editorVisible={showEditor} onChoose={(product) => {
       if (importing.current) return;
       if (!hasProductDetails(product)) void append(product.url, product);

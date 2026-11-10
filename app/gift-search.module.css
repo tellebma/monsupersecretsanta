@@ -21,6 +21,10 @@
   font-weight: 650;
 }
 
+.suggestionHeading {
+  font-size: clamp(1.45rem, 4vw, 1.85rem);
+}
+
 .fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
