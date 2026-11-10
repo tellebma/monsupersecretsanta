@@ -67,7 +67,9 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
   await page.getByLabel("Lien vers un produit").evaluate((input, pastedUrl) => {
     const clipboardData = new DataTransfer();
     clipboardData.setData("text/plain", pastedUrl);
-    input.dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+    const paste = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(paste, "clipboardData", { value: clipboardData });
+    input.dispatchEvent(paste);
   }, url);
   await expect(page.getByRole("status").filter({ hasText: "Lien ajouté." })).toBeVisible();
   const db = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });

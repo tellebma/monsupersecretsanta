@@ -191,7 +191,7 @@ export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
           <label>Lien vers un produit<input id="gift-product-link" type="url" value={url} disabled={loading || saving} placeholder="https://…"
             onChange={(event) => setUrl(event.target.value)}
             onPaste={(event) => {
-              const pasted = event.clipboardData.getData("text").trim();
+              const pasted = (event.clipboardData.getData("text/plain") || event.clipboardData.getData("text")).trim();
               if (safeLink(pasted)) {
                 event.preventDefault();
                 setUrl(pasted);

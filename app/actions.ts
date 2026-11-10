@@ -127,6 +127,17 @@ export async function addHost(edition: string, _: Result, data: FormData): Promi
   return { message: "Votre nom a été ajouté aux participants." };
 }
 
+export async function removeMember(edition: string, member: string, _: Result): Promise<Result> {
+  const db = await requireSession();
+  const { data, error } = await db.rpc("santa_remove_member", { p_edition: edition, p_member: member });
+  if (error) return { error: error.message };
+  revalidatePath("/groupes");
+  revalidatePath(`/groupes/${edition}`);
+  return { message: data?.reopened
+    ? "Participant retiré. Le tirage est repassé en brouillon car il reste moins de deux participants retenus."
+    : "Participant retiré du groupe." };
+}
+
 export async function configureEdition(edition: string, _: Result, data: FormData): Promise<Result> {
   let dates;
   try { dates = editionDates(data); } catch (error) { return err(error); }

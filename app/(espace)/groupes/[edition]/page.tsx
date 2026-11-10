@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addHost, configureEdition, invite, reveal } from "@/app/actions";
+import { addHost, configureEdition, invite, removeMember, reveal } from "@/app/actions";
 import { ActionForm, ExceptionFields, Submit } from "@/app/components";
 import { dateLabel, priceLabel } from "@/lib/format";
 import { requireSession } from "@/lib/supabase";
 import type { Edition, Gift } from "@/lib/types";
 import GiftCard from "../../gift-card";
 import EditionFields from "../edition-fields";
+import MemberRemoval from "../member-removal";
 
 const states = { draft: "Inscriptions ouvertes", scheduled: "Tirage programmé", blocked: "Tirage à ajuster", drawn: "Tirage effectué" };
 
@@ -57,6 +58,7 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
 
 function Organization({ edition }: { edition: Edition }) {
   const { id } = edition;
+  const members = edition.members ?? [];
   return <section className="stack">
     <div className="page-header">
       <h2>Organisation</h2>
@@ -69,12 +71,12 @@ function Organization({ edition }: { edition: Edition }) {
           <h3>Préparer le tirage</h3>
           <EditionFields edition={edition}/>
           <fieldset><legend>Participants retenus</legend>
-            {edition.members?.length ? edition.members.map((member) => <label className="check-row" key={member.id}>
+            {members.length ? members.map((member) => <label className="check-row" key={member.id}>
               <input type="checkbox" name="member" value={member.id} defaultChecked={member.selected}/>
               <span className="break">{member.name}<small>{member.email}</small></span>
             </label>) : <p className="hint">Les invités apparaissent ici après avoir rejoint le groupe.</p>}
           </fieldset>
-          <ExceptionFields members={edition.members} initial={edition.exceptions}/>
+          <ExceptionFields key={members.map(({ id }) => id).join(":")} members={members} initial={edition.exceptions}/>
           <p className="hint">Valider la liste ferme les inscriptions. Le tirage se lance ensuite à la date indiquée.</p>
           <div className="inline">
             <Submit intent="schedule">Valider et programmer</Submit>
@@ -91,6 +93,7 @@ function Organization({ edition }: { edition: Edition }) {
               </ActionForm>}
             {Boolean(edition.pending?.length) && <div><b>En attente</b><ul className="pending">{edition.pending?.map((mail) => <li key={mail}>{mail}</li>)}</ul></div>}
           </section>
+          <MemberRemoval action={removeMember.bind(null, id)} members={members} scheduled={edition.state === "scheduled"}/>
           {edition.state !== "scheduled" && <ActionForm action={addHost.bind(null, id)} className="panel stack">
             <h3>Participer à mon groupe</h3>
             <label>Nom d’affichage<input name="name" maxLength={80} required/></label>
