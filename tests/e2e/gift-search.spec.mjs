@@ -93,3 +93,15 @@ test("enregistre un cadeau manuel avec le nom seul", async ({ page }) => {
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
 });
+test("le catalogue renvoie des fiches marchandes uniquement aux comptes connectés", async ({ page }) => {
+  const path = "/api/gift-search?q=skyjo";
+  expect((await page.request.get(path)).status()).toBe(401);
+  await openGiftEditor(page);
+  const response = await page.request.get(path);
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["cache-control"]).toBe("private, no-store");
+  expect(await response.json()).toMatchObject({
+    status: "ok",
+    products: [expect.objectContaining({ name: expect.stringContaining("Skyjo"), url: expect.stringContaining("fnac.com") })],
+  });
+});

@@ -23,13 +23,14 @@ test("returns matching saved links, without duplicates or unsafe protocols", () 
   const gifts = [{
     name: "Carnet de voyage", description: "À spirale",
     links: [
-      { url: "https://example.org/carnet#details" },
+      { url: "https://example.org/carnet#details", name: { unexpected: "value" } },
       { url: "https://example.org/carnet" },
       { url: "javascript:alert(1)" },
     ],
   }];
   assert.deepEqual(findCatalogProducts("carnet", gifts), [{
     name: "Carnet de voyage", description: "À spirale", url: "https://example.org/carnet",
+    image: undefined, price: undefined, currency: undefined, availability: undefined,
   }]);
   assert.deepEqual(findCatalogProducts("carnet"), []);
 });

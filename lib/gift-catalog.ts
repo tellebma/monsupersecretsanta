@@ -1,4 +1,4 @@
-import { safeLink } from "./format";
+import { safeLink, safeProductImage } from "./format";
 import type { Gift, Link } from "./types";
 
 export type CatalogProduct = Link & { name: string };
@@ -112,12 +112,22 @@ export function uniqueCatalogProducts(products: CatalogProduct[], limit = 8) {
 
 export function findCatalogProducts(query: string, gifts: Gift[] = []) {
   const queryWords = words(query).filter((word) => !excludedWords.has(word));
+  if (!queryWords.length) return [];
   const ownProducts = gifts.flatMap((gift) => (gift.links ?? []).flatMap((link) => {
     const url = safeLink(link.url);
-    const name = link.name || gift.name;
+    const name = (typeof link.name === "string" && link.name.trim()) || gift.name;
     if (!url || !name) return [];
     url.hash = "";
-    return [{ ...link, url: url.href, name, description: link.description || gift.description || undefined }];
+    const description = (typeof link.description === "string" && link.description.trim()) || gift.description || undefined;
+    return [{
+      url: url.href,
+      name,
+      description,
+      image: safeProductImage(link.image)?.href,
+      price: typeof link.price === "number" && Number.isFinite(link.price) && link.price >= 0 ? link.price : undefined,
+      currency: typeof link.currency === "string" ? link.currency : undefined,
+      availability: typeof link.availability === "string" ? link.availability : undefined,
+    }];
   }));
   return uniqueCatalogProducts([...ownProducts, ...starterCatalog]
     .map((product) => ({ product, score: score(queryWords, product) }))
