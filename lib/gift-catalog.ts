@@ -69,6 +69,26 @@ const starterCatalog: CatalogProduct[] = [
     description: "Une cafetière de 0,5 litre en acier inoxydable, chez Truffaut.",
     url: "https://www.truffaut.com/chambord-cafetiere-a-piston-bodum-4-tasses-0-5-l-acier-inox.html",
   },
+  {
+    name: "Zara — Écharpe en laine",
+    description: "Une écharpe écrue de 180 × 60 cm.",
+    url: "https://www.zara.com/fr/fr/echarpe-en-maille-100-laine-p01942305.html?v1=578150322",
+  },
+  {
+    name: "Uniqlo — Écharpe en cachemire",
+    description: "Une écharpe unisexe en cachemire, avec des franges.",
+    url: "https://www.uniqlo.com/fr/fr/products/E470089-000/00?colorDisplayCode=09",
+  },
+  {
+    name: "H&M — Bonnet en maille côtelée",
+    description: "Un bonnet beige chiné avec un bord replié.",
+    url: "https://www2.hm.com/fr_fr/productpage.1241279004.html",
+  },
+  {
+    name: "Kiabi — Bonnet avec revers",
+    description: "Un bonnet noir pour homme.",
+    url: "https://www.kiabi.com/bonnet-avec-revers-noir_P2388256C2388257",
+  },
 ];
 
 const excludedWords = new Set(["un", "une", "des", "les", "du", "de", "la", "le", "d", "l", "a", "en", "et", "pour"]);
