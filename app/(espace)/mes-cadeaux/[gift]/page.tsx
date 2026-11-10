@@ -20,6 +20,6 @@ export default async function GiftPage({ params }: { params: Promise<{ gift: str
   return <section className="form-width stack">
     <Link className="back" href="/mes-cadeaux">← Ma liste</Link>
     <div><p className="eyebrow"><span/> UNE IDÉE CADEAU</p><h1 className="page-title">{gift ? "Modifier le cadeau" : "Ajouter un cadeau"}</h1></div>
-    <div className="panel"><GiftForm action={saveGift.bind(null, gift?.id ?? null)} gift={gift}/></div>
+    <GiftForm action={saveGift.bind(null, gift?.id ?? null)} gift={gift}/>
   </section>;
 }

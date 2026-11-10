@@ -105,7 +105,7 @@ function hasProductDetails(product: Link) {
   return Boolean(product.name && product.description && safeProductImage(product.image));
 }
 
-export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
+export function GiftForm({ action, gift, startWithSearch = false }: { action: Action; gift?: Gift; startWithSearch?: boolean }) {
   const [result, submit, saving] = useActionState(action, {});
   const [name, setName] = useState(gift?.name ?? "");
   const [description, setDescription] = useState(gift?.description ?? "");
@@ -113,6 +113,7 @@ export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
   const [url, setUrl] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showEditor, setShowEditor] = useState(!startWithSearch);
   const importing = useRef(false);
 
   function addLink(link: Link) {
@@ -125,6 +126,7 @@ export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
     setLinks((current) => [...current, { ...link, url: parsed.href, image: safeProductImage(link.image)?.href }]);
     setName((current) => current || link.name || "");
     setDescription((current) => current || link.description || "");
+    setShowEditor(true);
     return true;
   }
 
@@ -167,12 +169,14 @@ export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
   }
 
   return <div className="stack">
-    {links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links} onChoose={(product) => {
+    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links}
+      editorVisible={showEditor} onChoose={(product) => {
       if (importing.current) return;
       if (!hasProductDetails(product)) void append(product.url, product);
       else if (addLink(product)) setNotice("Produit ajouté à la fiche.");
     }}/>}
-    <form action={submit} className="stack">
+    {showEditor && <form id="gift-editor" action={submit} className="panel stack" aria-label="Fiche cadeau">
+      {startWithSearch && <h2>Ta fiche cadeau</h2>}
       <label>Nom du cadeau<input name="name" maxLength={200} required value={name} onChange={(event) => setName(event.target.value)}/></label>
       <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Facultative"
         value={description} onChange={(event) => setDescription(event.target.value)}/></label>
@@ -207,6 +211,6 @@ export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
       <input type="hidden" name="links" value={JSON.stringify(links)}/>
       <Feedback result={result}/>
       {loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
-    </form>
+    </form>}
   </div>;
 }

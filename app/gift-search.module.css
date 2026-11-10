@@ -1,13 +1,24 @@
-.search {
-  display: grid;
-  gap: .65rem;
-  min-width: 0;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
-.search h2 {
-  font-size: 1.65rem;
+.entry h2 {
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
+}
+
+.search {
+  display: grid;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.draftLink {
+  justify-self: start;
+  font-weight: 650;
 }
 
 .fields {
@@ -51,6 +62,10 @@
 }
 
 @media (max-width: 440px) {
+  .entry > a {
+    width: 100%;
+  }
+
   .fields {
     grid-template-columns: minmax(0, 1fr);
   }

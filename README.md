@@ -14,6 +14,7 @@ Une application web française, utilisable sur mobile, pour organiser ses tirage
 | P0 | Liste de cadeaux commune et réservations entre groupes, avec rappels par mail |
 | P0 | Retrait d’un participant par l’organisateur avant le tirage |
 | P0 | Recherche de cadeaux, import par lien, compteur d’échecs et saisie avec le nom seul |
+| P1 | Écran « Chercher un cadeau » accessible depuis la liste, avec préremplissage après sélection |
 | P1 | Parallaxe des cadeaux sur l’accueil, avec prise en charge du mouvement réduit |
 | P1 | Rapport SQL des imports incomplets par marchand |
 | P1 | Ajout de fiches H&M, Kiabi, Uniqlo et Zara au catalogue intégré |
