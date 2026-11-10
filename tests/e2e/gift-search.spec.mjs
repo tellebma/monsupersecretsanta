@@ -19,6 +19,10 @@ async function openGiftSearch(page) {
   await expect(page.getByRole("heading", { name: "Chercher un cadeau", level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Idées cadeaux à découvrir" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveCount(0);
+  const suggestions = page.getByRole("region", { name: "Catalogue de cadeaux" }).getByRole("listitem");
+  await expect(suggestions).toHaveCount(6);
+  await expect(suggestions.first()).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
 test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async ({ page }) => {
@@ -40,7 +44,9 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="green"/></svg>',
   }));
   await page.route("**/api/gift-search?*", (route) => {
-    expect(new URL(route.request().url()).searchParams.get("q")).toBe("carnet");
+    const query = new URL(route.request().url()).searchParams.get("q");
+    if (query === "sans résultat") return route.fulfill({ json: { status: "ok", products: [] } });
+    expect(query).toBe("carnet");
     return route.fulfill({ json: { status: "ok", products: [product, second] } });
   });
   await openGiftSearch(page);
@@ -56,6 +62,12 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
   await page.getByRole("textbox", { name: "Description" }).fill("Description personnalisée.");
   await page.getByRole("button", { name: "Choisir " + second.name }).click();
   await expect(page.getByRole("status").filter({ hasText: "Produit partiellement importé." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ajouté " + second.name })).toBeDisabled();
+  await page.getByRole("searchbox", { name: "Nom du produit" }).fill("sans résultat");
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Aucun produit trouvé." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "2 liens marchands" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Importer un lien" })).toHaveAttribute("href", "#gift-product-link");
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(product.name);
   await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue("Description personnalisée.");
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
@@ -71,7 +83,7 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Aucun produit trouvé." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Autres idées cadeaux" })).toBeVisible();
-  await page.getByRole("link", { name: "Tu as un lien vers le produit ?" }).click();
+  await page.getByRole("link", { name: "Importer un lien" }).click();
   await expect(page).toHaveURL(/\/mes-cadeaux\/nouveau#gift-product-link$/);
 
   const url = "https://example.org/cadeau-" + randomUUID().slice(0, 8);
