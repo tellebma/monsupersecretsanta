@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { demoEmail, localPassword } from "../../scripts/preprod-data.mjs";
@@ -48,6 +51,33 @@ test("accessibilité WCAG de l’accueil", async ({ page }) => {
 test("accessibilité WCAG de la connexion", async ({ page }) => {
   await page.goto("/connexion");
   await assertAccessible(page);
+});
+
+test("retrouve son espace après avoir fermé et rouvert le navigateur", async ({ browser, baseURL }) => {
+  const temporaryDirectory = resolve(tmpdir());
+  const profile = await mkdtemp(join(temporaryDirectory, "santa-session-"));
+  let context;
+  try {
+    context = await browser.browserType().launchPersistentContext(profile, { baseURL });
+    await signIn(context.pages()[0] ?? await context.newPage(), "lea");
+    const sessionCookies = (await context.cookies()).filter(({ name }) => /^sb-.+-auth-token(?:\.\d+)?$/.test(name));
+    expect(sessionCookies.length).toBeGreaterThan(0);
+    expect(sessionCookies.every(({ expires }) => expires > Date.now() / 1000)).toBe(true);
+    await context.close();
+    context = await browser.browserType().launchPersistentContext(profile, { baseURL });
+    const page = context.pages()[0] ?? await context.newPage();
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "Mon espace", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Mon espace", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Mes groupes" })).toBeVisible();
+    await page.getByRole("button", { name: "Déconnexion" }).click();
+    await expect(page.getByRole("link", { name: "Se connecter", exact: true })).toBeVisible();
+    await page.goto("/groupes");
+    await expect(page).toHaveURL(/\/connexion$/);
+  } finally {
+    await context?.close();
+    if (dirname(profile) === temporaryDirectory) await rm(profile, { recursive: true, force: true, maxRetries: 3 });
+  }
 });
 
 test("crée un compte avec le code du mail, définit le mot de passe et se reconnecte", async ({ page, request }) => {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { configured, session } from "@/lib/supabase";
 import { Brand, GiftIcon } from "./brand";
 import { GiftParallax } from "./gift-parallax";
 import styles from "./gift-parallax.module.css";
@@ -40,16 +41,23 @@ function Wrapping() {
   </svg></GiftParallax>;
 }
 
-export default function Home() {
+export default async function Home() {
+  const db = configured() ? await session() : null;
+  const claims = db ? (await db.auth.getClaims()).data?.claims : undefined;
+  const signedIn = Boolean(claims?.sub);
   return <>
-    <header className="top"><div className="shell bar"><Brand/><Link className="button outline small" href="/connexion">Se connecter</Link></div></header>
+    <header className="top"><div className="shell bar"><Brand/>
+      <Link className="button outline small" href={signedIn ? "/groupes" : "/connexion"}>{signedIn ? "Mon espace" : "Se connecter"}</Link>
+    </div></header>
     <main className="shell">
       <section className="hero">
         <div>
           <p className="eyebrow"><span/> LE SECRET SANTA, ENSEMBLE</p>
           <h1>La surprise, <em>sans les doublons.</em></h1>
           <p className="hero-copy">Une seule liste de cadeaux pour tous tes Secret Santa. Organise tes tirages et réserve une idée en toute discrétion.</p>
-          <Link className="button" href="/connexion?mode=signup">Créer mon compte <span aria-hidden="true">↗</span></Link>
+          <Link className="button" href={signedIn ? "/groupes" : "/connexion?mode=signup"}>
+            {signedIn ? "Accéder à mes groupes" : "Créer mon compte"} <span aria-hidden="true">↗</span>
+          </Link>
         </div>
         <Wrapping/>
       </section>
