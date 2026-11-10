@@ -10,8 +10,8 @@ type SearchResult = {
   products: Link[];
 };
 
-export function GiftSearch({ disabled, importing, links, onChoose }: {
-  disabled: boolean; importing: boolean; links: Link[]; onChoose: (product: Link) => void;
+export function GiftSearch({ disabled, importing, links, editorVisible, onChoose }: {
+  disabled: boolean; importing: boolean; links: Link[]; editorVisible: boolean; onChoose: (product: Link) => void;
 }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult>();
@@ -48,12 +48,13 @@ export function GiftSearch({ disabled, importing, links, onChoose }: {
     }
   }
 
-  return <section className={styles.search} aria-labelledby="gift-search-heading">
-    <h2 id="gift-search-heading">Rechercher un cadeau</h2>
+  const productLink = editorVisible ? "#gift-product-link" : "/mes-cadeaux/nouveau#gift-product-link";
+
+  return <section className={`panel ${styles.search}`} aria-label="Catalogue de cadeaux">
     <form role="search" aria-label="Recherche de cadeaux" className={styles.fields} onSubmit={search}>
       <label>Nom du produit
         <input type="search" autoComplete="off" value={query} minLength={2} maxLength={100}
-          placeholder="Par exemple, jeu de société" onChange={(event) => {
+          placeholder="Par exemple, Skyjo, bonnet ou IKEA" onChange={(event) => {
             request.current?.abort();
             request.current = null;
             setSearching(false);
@@ -63,14 +64,18 @@ export function GiftSearch({ disabled, importing, links, onChoose }: {
       </label>
       <button className="button" type="submit" disabled={searching || disabled}>Rechercher</button>
     </form>
+    {!searching && !result && !editorVisible && <p className="hint">
+      <a href={productLink}>Tu as déjà un lien vers le produit&nbsp;?</a>
+    </p>}
     {searching && <p role="status" className="hint">Recherche en cours…</p>}
     {result && !result.products.length && <div className="feedback">
       <p role="status">{result.status === "unavailable" ? "La recherche est temporairement indisponible." : "Aucun produit trouvé."}</p>
-      <a href="#gift-product-link">Tu as un lien vers le produit&nbsp;?</a>
+      <a href={productLink}>Tu as un lien vers le produit&nbsp;?</a>
     </div>}
     {result && result.products.length > 0 && <>
       <p role="status" className="hint">{result.products.length === 1 ? "1 produit trouvé" : `${result.products.length} produits trouvés`}</p>
       {importing && <p role="status" className="hint">Import des informations du produit…</p>}
+      {links.length > 0 && <a className={styles.draftLink} href="#gift-editor">Voir la fiche cadeau</a>}
       <ul className={styles.results}>
         {result.products.map((product) => {
           const image = safeProductImage(product.image);

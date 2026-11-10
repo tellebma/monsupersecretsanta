@@ -3,14 +3,21 @@ import { expect, test } from "@playwright/test";
 import pg from "pg";
 import { demoEmail, localPassword } from "../../scripts/preprod-data.mjs";
 
-async function openGiftEditor(page) {
+async function signIn(page) {
   await page.goto("/connexion");
   await page.getByLabel("Adresse mail").fill(demoEmail("lea"));
   await page.getByLabel("Mot de passe", { exact: true }).fill(localPassword);
   await page.getByRole("button", { name: "Se connecter", exact: true }).click();
   await expect(page).toHaveURL(/\/groupes$/);
-  await page.goto("/mes-cadeaux/nouveau");
-  await expect(page.getByRole("heading", { name: "Rechercher un cadeau" })).toBeVisible();
+}
+
+async function openGiftSearch(page) {
+  await signIn(page);
+  await page.getByRole("link", { name: "Ma liste", exact: true }).click();
+  await page.getByRole("link", { name: "Chercher un cadeau", exact: true }).click();
+  await expect(page).toHaveURL(/\/mes-cadeaux\/chercher$/);
+  await expect(page.getByRole("heading", { name: "Chercher un cadeau", level: 1 })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveCount(0);
 }
 
 test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async ({ page }) => {
@@ -35,12 +42,13 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
     expect(new URL(route.request().url()).searchParams.get("q")).toBe("carnet");
     return route.fulfill({ json: { status: "ok", products: [product, second] } });
   });
-  await openGiftEditor(page);
+  await openGiftSearch(page);
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("carnet");
   await page.getByRole("searchbox", { name: "Nom du produit" }).press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "2 produits trouvés" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("button", { name: "Choisir " + product.name }).click();
+  await expect(page.getByRole("link", { name: "Voir la fiche cadeau" })).toHaveAttribute("href", "#gift-editor");
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(product.name);
   await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue(product.description);
   await expect(page.getByRole("group", { name: "Liens marchands" }).locator("img")).toHaveAttribute("src", product.image);
@@ -57,11 +65,12 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
 
 test("propose un lien après une recherche vide et conserve l’URL d’un import indisponible", async ({ page }) => {
   await page.route("**/api/gift-search?*", (route) => route.fulfill({ json: { status: "ok", products: [] } }));
-  await openGiftEditor(page);
+  await openGiftSearch(page);
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("objet introuvable");
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Aucun produit trouvé." })).toBeVisible();
   await page.getByRole("link", { name: "Tu as un lien vers le produit ?" }).click();
+  await expect(page).toHaveURL(/\/mes-cadeaux\/nouveau#gift-product-link$/);
 
   const url = "https://example.org/cadeau-" + randomUUID().slice(0, 8);
   await page.getByLabel("Lien vers un produit").evaluate((input, pastedUrl) => {
@@ -89,7 +98,10 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
 });
 
 test("enregistre un cadeau manuel avec le nom seul", async ({ page }) => {
-  await openGiftEditor(page);
+  await signIn(page);
+  await page.getByRole("link", { name: "Ma liste", exact: true }).click();
+  await page.getByRole("link", { name: "Ajouter un cadeau", exact: true }).click();
+  await expect(page.getByRole("searchbox")).toHaveCount(0);
   const name = "Idée manuelle QA " + randomUUID().slice(0, 8);
   await page.getByRole("textbox", { name: "Nom du cadeau" }).fill(name);
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
@@ -98,7 +110,7 @@ test("enregistre un cadeau manuel avec le nom seul", async ({ page }) => {
 test("le catalogue renvoie des fiches marchandes uniquement aux comptes connectés", async ({ page }) => {
   const path = "/api/gift-search?q=skyjo";
   expect((await page.request.get(path)).status()).toBe(401);
-  await openGiftEditor(page);
+  await signIn(page);
   const response = await page.request.get(path);
   expect(response.ok()).toBe(true);
   expect(response.headers()["cache-control"]).toBe("private, no-store");
