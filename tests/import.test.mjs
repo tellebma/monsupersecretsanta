@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { importProduct, productFromHtml } from "../lib/merchants.ts";
+import { importFailureKey, isPublicAddress, publicMerchantUrl } from "../lib/merchant-http.ts";
 import { nextPath, safeLink } from "../lib/format.ts";
 
 const productUrl = "https://www.fnac.com/produit";
@@ -25,14 +26,43 @@ test("handles a product without pricing and refuses generic pages and unsafe ima
   assert.equal(product.image, undefined);
 });
 
-test("rejects off-site redirects and non-retailer hosts before fetching them", async (context) => {
-  const fetch = context.mock.method(globalThis, "fetch", async () => new Response(null, {
-    status: 302, headers: { Location: "http://127.0.0.1:54321/" },
-  }));
-  assert.equal(await importProduct("https://fnac.com.example.org/produit"), null);
-  assert.equal(fetch.mock.callCount(), 0);
-  assert.equal(await importProduct(productUrl), null);
-  assert.equal(fetch.mock.callCount(), 1);
+test("imports other public merchant domains and revalidates redirect destinations", async () => {
+  const visited = [];
+  const readPage = async (url) => {
+    visited.push(url.href);
+    if (url.hostname === "boutique.fr") return { redirect: "https://catalogue.boutique.fr/produit" };
+    return { html: Buffer.from('<script type="application/ld+json">{"@type":"Product","name":"Carnet"}</script>') };
+  };
+  const original = "http://boutique.fr/article";
+  assert.equal((await importProduct(original, { readPage }))?.url, original);
+  assert.deepEqual(visited, ["https://boutique.fr/article", "https://catalogue.boutique.fr/produit"]);
+  assert.equal(await importProduct(productUrl, { readPage: async () => ({ redirect: "https://127.0.0.1/" }) }), null);
+});
+
+test("catalogue imports use a product URL declared by the merchant", () => {
+  const url = new URL(productUrl);
+  const product = '<script type="application/ld+json">{"@type":"Product","name":"Carnet"}</script>';
+  assert.equal(productFromHtml(product, url, true), null);
+  assert.equal(productFromHtml(product + '<link rel="canonical" href="https://autre.fr/produit">', url, true), null);
+  assert.equal(productFromHtml(product + '<link rel="canonical" href="/offre/123">', url, true)?.url, "https://www.fnac.com/offre/123");
+});
+
+test("rejects internal hosts and IP ranges used for server-side request forgery", () => {
+  for (const url of ["https://localhost/", "https://service.internal/", "https://127.1/", "https://[::1]/", "https://shop.fr:8443/"]) {
+    assert.equal(publicMerchantUrl(url), null, url);
+  }
+  assert.equal(publicMerchantUrl("https://fr.shein.com/produit"), null);
+  for (const address of ["127.0.0.1", "10.0.1.1", "169.254.169.254", "100.64.0.1", "::ffff:192.168.0.1", "fc00::1", "64:ff9b::127.0.0.1"]) {
+    assert.equal(isPublicAddress(address), false, address);
+  }
+  for (const address of ["1.1.1.1", "2606:4700::1"]) assert.equal(isPublicAddress(address), true);
+});
+
+test("normalizes failed imports without retaining tracking or secret query parameters", () => {
+  assert.deepEqual(importFailureKey("http://boutique.fr/produit?utm_source=x&token=secret&sku=456&id=12#section"), {
+    url: "https://boutique.fr/produit?id=12&sku=456", merchant: "boutique.fr",
+  });
+  assert.equal(importFailureKey("https://shop.fr/produit?id=abc%20def").url, "https://shop.fr/produit");
 });
 
 test("only accepts ordinary product URLs and same-site invitation returns", () => {

@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useState, type ReactNode } from "react";
+import { useActionState, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { emailAccount, fetchProduct, login, social, type Result } from "./actions";
-import { safeLink } from "@/lib/format";
+import { safeLink, safeProductImage } from "@/lib/format";
 import type { Edition, Gift, Link } from "@/lib/types";
+import { GiftSearch } from "./gift-search";
+import giftStyles from "./gift-search.module.css";
 
 type Action = (state: Result, data: FormData) => Promise<Result>;
 
@@ -99,52 +101,112 @@ export function ExceptionFields({ members = [], initial = [] }: { members?: Edit
   </fieldset>;
 }
 
+function hasProductDetails(product: Link) {
+  return Boolean(product.name && product.description && safeProductImage(product.image));
+}
+
 export function GiftForm({ action, gift }: { action: Action; gift?: Gift }) {
-  const [result, submit] = useActionState(action, {});
+  const [result, submit, saving] = useActionState(action, {});
   const [name, setName] = useState(gift?.name ?? "");
   const [description, setDescription] = useState(gift?.description ?? "");
   const [links, setLinks] = useState<Link[]>(gift?.links ?? []);
   const [url, setUrl] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-  async function append() {
-    const parsed = safeLink(url.trim());
+  const importing = useRef(false);
+
+  function addLink(link: Link) {
+    const parsed = safeLink(link.url);
+    if (!parsed) return false;
+    if (links.some((existing) => existing.url === parsed.href)) {
+      setNotice("Ce lien est déjà dans la liste.");
+      return false;
+    }
+    setLinks((current) => [...current, { ...link, url: parsed.href, image: safeProductImage(link.image)?.href }]);
+    setName((current) => current || link.name || "");
+    setDescription((current) => current || link.description || "");
+    return true;
+  }
+
+  async function append(value: string, knownProduct?: Link) {
+    if (importing.current || links.length >= 20) return;
+    const parsed = safeLink(value.trim());
     if (!parsed) { setNotice("Saisis un lien commençant par https:// ou http://."); return; }
-    if (links.some((link) => link.url === parsed.href)) { setNotice("Ce lien est déjà dans la liste."); return; }
+    if (links.some((link) => link.url === parsed.href)) {
+      setNotice("Ce lien est déjà dans la liste.");
+      if (!knownProduct) setUrl("");
+      return;
+    }
+    importing.current = true;
     setLoading(true);
     setNotice("");
+    let imported: Link | null = null;
     try {
-      const imported = await fetchProduct(parsed.href);
-      setLinks((current) => [...current, imported ?? { url: parsed.href }]);
-      if (imported) {
-        setName((current) => current || imported.name || "");
-        setDescription((current) => current || imported.description || "");
-      }
-      setNotice(imported ? "Informations produit importées." : "Lien ajouté. Tu peux compléter la fiche à la main.");
-      setUrl("");
+      imported = await fetchProduct(parsed.href);
     } catch {
-      setNotice("Impossible d’ajouter le lien pour le moment. Réessaie.");
+      // The link is still useful when the import request fails.
     } finally {
+      const link = {
+        url: parsed.href,
+        name: knownProduct?.name || imported?.name,
+        description: knownProduct?.description || imported?.description,
+        image: safeProductImage(knownProduct?.image)?.href || imported?.image,
+        price: imported?.price ?? knownProduct?.price,
+        currency: imported?.currency ?? knownProduct?.currency,
+        availability: imported?.availability ?? knownProduct?.availability,
+      };
+      if (addLink(link)) {
+        if (hasProductDetails(link)) setNotice("Informations produit importées.");
+        else if (knownProduct || imported) setNotice("Produit partiellement importé. Tu peux compléter la fiche à la main.");
+        else setNotice("Lien ajouté. Tu peux compléter la fiche à la main.");
+      }
+      if (!knownProduct) setUrl("");
+      importing.current = false;
       setLoading(false);
     }
   }
-  return <form action={submit} className="stack">
-    <label>Nom du cadeau<input name="name" maxLength={200} required value={name} onChange={(event) => setName(event.target.value)}/></label>
-    <label>Description<textarea name="description" rows={4} maxLength={3000} required value={description} onChange={(event) => setDescription(event.target.value)}/></label>
-    <fieldset><legend>Liens marchands</legend><p className="hint">Colle un lien produit. Les informations sont récupérées quand la boutique les rend accessibles.</p>
-      {links.map((link) => <div className="inline spread list-row" key={link.url}>
-        <span className="break">{link.name || safeLink(link.url)?.hostname || link.url}</span>
-        <button className="text-button" type="button" onClick={() => setLinks(links.filter((item) => item.url !== link.url))}>Retirer</button>
-      </div>)}
-      {links.length < 20 && <div className="stack tight">
-        <label>Lien vers un produit<input type="url" value={url} disabled={loading} placeholder="https://…" onChange={(event) => setUrl(event.target.value)}
-          onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (!loading) void append(); } }}/></label>
-        <button type="button" className="button outline" onClick={append} disabled={loading}>{loading ? "Import en cours…" : "Ajouter le lien"}</button>
-      </div>}
-      {notice && <p role="status" className="hint">{notice}</p>}
-    </fieldset>
-    <input type="hidden" name="links" value={JSON.stringify(links)}/>
-    <Feedback result={result}/>
-    {loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
-  </form>;
+
+  return <div className="stack">
+    {links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links} onChoose={(product) => {
+      if (importing.current) return;
+      if (!hasProductDetails(product)) void append(product.url, product);
+      else if (addLink(product)) setNotice("Produit ajouté à la fiche.");
+    }}/>}
+    <form action={submit} className="stack">
+      <label>Nom du cadeau<input name="name" maxLength={200} required value={name} onChange={(event) => setName(event.target.value)}/></label>
+      <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Facultative"
+        value={description} onChange={(event) => setDescription(event.target.value)}/></label>
+      <fieldset>
+        <legend>Liens marchands</legend>
+        <p className="hint">Colle un lien produit pour importer son image, son nom et sa description quand la boutique les fournit.</p>
+        {links.map((link) => {
+          const image = safeProductImage(link.image);
+          return <div className="inline list-row" key={link.url}>
+            {image && <img className={giftStyles.thumbnail} src={image.href} alt="" width={48} height={48} loading="lazy" referrerPolicy="no-referrer"/>}
+            <span className={`break ${giftStyles.linkName}`}>{link.name || safeLink(link.url)?.hostname || link.url}</span>
+            <button className="text-button" type="button" onClick={() => setLinks((current) => current.filter((item) => item.url !== link.url))}>Retirer</button>
+          </div>;
+        })}
+        {links.length < 20 && <div className="stack tight">
+          <label>Lien vers un produit<input id="gift-product-link" type="url" value={url} disabled={loading || saving} placeholder="https://…"
+            onChange={(event) => setUrl(event.target.value)}
+            onPaste={(event) => {
+              const pasted = (event.clipboardData.getData("text/plain") || event.clipboardData.getData("text")).trim();
+              if (safeLink(pasted)) {
+                event.preventDefault();
+                setUrl(pasted);
+                void append(pasted);
+              }
+            }}
+            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void append(url); } }}/></label>
+          <button type="button" className="button outline" onClick={() => void append(url)} disabled={loading || saving}>{loading ? "Import en cours…" : "Ajouter le lien"}</button>
+          {url.trim() && !loading && <button type="button" className="text-button" onClick={() => { setUrl(""); setNotice(""); }}>Effacer le lien saisi</button>}
+        </div>}
+        {notice && <p role="status" className="hint">{notice}</p>}
+      </fieldset>
+      <input type="hidden" name="links" value={JSON.stringify(links)}/>
+      <Feedback result={result}/>
+      {loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
+    </form>
+  </div>;
 }

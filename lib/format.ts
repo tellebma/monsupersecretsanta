@@ -42,6 +42,19 @@ export function safeLink(value: unknown) {
   }
 }
 
+export function safeProductImage(value: unknown) {
+  const url = safeLink(value);
+  if (!url || url.protocol !== "https:" || url.port) return null;
+  const host = url.hostname.replace(/\.$/, "");
+  const publicHostname = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$/i;
+  if (!publicHostname.test(host) || /\.(?:localhost|local|internal|test|invalid|example|onion|arpa)$/i.test(host)) return null;
+  return url;
+}
+
+export function excludedMerchant(hostname: string) {
+  return /(?:^|\.)shein\.(?:com|fr)\.?$/i.test(hostname);
+}
+
 export function nextPath(value: unknown) {
   return typeof value === "string" && /^\/invitation\/[a-f0-9]{64}$/.test(value) ? value : "/groupes";
 }
