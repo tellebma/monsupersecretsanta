@@ -1,4 +1,4 @@
-import { safeLink, safeProductImage } from "./format";
+import { excludedMerchant, safeLink, safeProductImage } from "./format";
 import type { Gift, Link } from "./types";
 
 export type CatalogProduct = Link & { name: string };
@@ -116,7 +116,7 @@ export function findCatalogProducts(query: string, gifts: Gift[] = []) {
   const ownProducts = gifts.flatMap((gift) => (gift.links ?? []).flatMap((link) => {
     const url = safeLink(link.url);
     const name = (typeof link.name === "string" && link.name.trim()) || gift.name;
-    if (!url || !name) return [];
+    if (!url || !name || excludedMerchant(url.hostname)) return [];
     url.hash = "";
     const description = (typeof link.description === "string" && link.description.trim()) || gift.description || undefined;
     return [{

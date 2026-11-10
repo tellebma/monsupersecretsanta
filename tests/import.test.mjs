@@ -51,6 +51,7 @@ test("rejects internal hosts and IP ranges used for server-side request forgery"
   for (const url of ["https://localhost/", "https://service.internal/", "https://127.1/", "https://[::1]/", "https://shop.fr:8443/"]) {
     assert.equal(publicMerchantUrl(url), null, url);
   }
+  assert.equal(publicMerchantUrl("https://fr.shein.com/produit"), null);
   for (const address of ["127.0.0.1", "10.0.1.1", "169.254.169.254", "100.64.0.1", "::ffff:192.168.0.1", "fc00::1", "64:ff9b::127.0.0.1"]) {
     assert.equal(isPublicAddress(address), false, address);
   }

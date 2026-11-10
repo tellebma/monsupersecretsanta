@@ -51,6 +51,10 @@ export function safeProductImage(value: unknown) {
   return url;
 }
 
+export function excludedMerchant(hostname: string) {
+  return /(?:^|\.)shein\.(?:com|fr)\.?$/i.test(hostname);
+}
+
 export function nextPath(value: unknown) {
   return typeof value === "string" && /^\/invitation\/[a-f0-9]{64}$/.test(value) ? value : "/groupes";
 }

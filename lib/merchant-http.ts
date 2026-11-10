@@ -2,14 +2,14 @@ import { lookup } from "node:dns/promises";
 import type { LookupAddress } from "node:dns";
 import { request } from "node:https";
 import ipaddr from "ipaddr.js";
-import { safeLink, safeProductImage } from "./format";
+import { excludedMerchant, safeLink, safeProductImage } from "./format";
 
 const MAX_HTML_BYTES = 2_500_000;
 const exampleDomains = ["example.com", "example.net", "example.org"];
 
 export function publicMerchantUrl(value: string) {
   const url = safeLink(value);
-  if (!url || url.port) return null;
+  if (!url || url.port || excludedMerchant(url.hostname)) return null;
   url.protocol = "https:";
   url.hash = "";
   url.hostname = url.hostname.replace(/\.$/, "");

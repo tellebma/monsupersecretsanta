@@ -1,4 +1,4 @@
-import { safeLink } from "./format";
+import { excludedMerchant, safeLink } from "./format";
 import { importProduct } from "./merchants";
 import type { CatalogProduct } from "./gift-catalog";
 
@@ -46,7 +46,7 @@ export async function requestBraveCandidates(query: string, key: string, signal:
   const candidates = new Set<string>();
   for (const result of payload.web?.results ?? []) {
     const url = safeLink(result.url);
-    if (!url || url.protocol !== "https:" || url.port || result.family_friendly === false) continue;
+    if (!url || url.protocol !== "https:" || url.port || excludedMerchant(url.hostname) || result.family_friendly === false) continue;
     const merchant = url.hostname.replace(/^(?:www\d*|m)\./, "");
     const knownProductPage = productPaths[merchant]?.test(url.pathname);
     const structuredProduct = result.product || (Array.isArray(result.schemas) && result.schemas.some(productSchema));

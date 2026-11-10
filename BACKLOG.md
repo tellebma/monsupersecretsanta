@@ -12,7 +12,7 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 | P1 | Élargir la recherche à davantage de marchands | À faire | Le catalogue intégré fonctionne sans clé. Activer la recherche Brave après configuration d’un compte autorisé et vérifier les résultats français. |
 | P1 | Prioriser les intégrations marchandes | À faire | Examiner les compteurs des imports incomplets et renforcer les marchands les plus demandés quand des données sont disponibles. |
 | P2 | Domaine MonSuperSecretSanta.fr | Bloqué | Raccorder le domaine à Vercel après son enregistrement. |
-| P2 | Détection des sites marchands douteux | À cadrer | Définir les signaux et le comportement souhaité avant d’ajouter une règle de blocage. |
+| P2 | Détection des arnaques et du dropshipping | À cadrer | Définir les signaux et le comportement souhaité avant d’ajouter une règle de blocage. |
 
 ## Périmètre fonctionnel à préserver
 
@@ -21,7 +21,7 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 - L’organisateur valide les participants, fixe la date du tirage automatique et indique la date de l’échange. Il peut exclure des paires dans les deux sens. Dans le même groupe, chaque attribution exclut le même destinataire pour les trois années suivantes. En cas d’impasse, l’organisateur ajuste les contraintes.
 - Après le tirage définitif, chaque participant révèle son destinataire avec « Tirer au sort ». L’organisateur voit son propre résultat s’il participe. Les autres attributions et réservations restent privées. Les membres peuvent compléter leur liste après le tirage.
 - Une seule liste de cadeaux par personne. Elle est consultable par les personnes qui ont tiré ce destinataire. Le budget indicatif s’applique au total des cadeaux de l’échange. Chaque cadeau peut avoir plusieurs liens marchands.
-- La recherche de cadeaux affiche un recours au lien lorsqu’aucun résultat ne correspond. Coller un lien tente d’importer l’image, le nom et la description, ainsi que le prix et la disponibilité quand la page les fournit. Le nom suffit pour la saisie manuelle. Les importations incomplètes alimentent un compteur par URL. Les marchands initialement ciblés sont Amazon France, Boulanger, Fnac, Decathlon, IKEA, Zara, Kiabi et H&M.
+- La recherche de cadeaux affiche un recours au lien lorsqu’aucun résultat ne correspond. Coller un lien tente d’importer l’image, le nom et la description, ainsi que le prix et la disponibilité quand la page les fournit. Le nom suffit pour la saisie manuelle. Les importations incomplètes alimentent un compteur par URL. Les marchands initialement ciblés sont Amazon France, Boulanger, Fnac, Decathlon, IKEA, Zara, Kiabi et H&M. SHEIN est exclu de la recherche et de l’import automatique.
 - Une réservation bloque immédiatement le cadeau dans tous les groupes. Le donneur peut réserver plusieurs cadeaux, libérer une réservation ou confirmer l’achat. Une réservation expire après 14 jours et déclenche un rappel au bout de 5 jours. Un achat confirmé reste indisponible pour les groupes futurs.
 - Les autres donneurs voient uniquement « Indisponible » ou « Déjà acheté », sans date ni identité. Les statuts restent masqués au destinataire jusqu’à l’échange. Les personnes qui ont réservé conservent les détails du cadeau tels qu’ils étaient au moment de leur réservation, même si la liste change.
 - Notifications par mail uniquement. Invitation, tirage disponible, liste toujours vide 7 jours après le tirage, rappel de réservation et rappel 3 jours avant l’échange.
