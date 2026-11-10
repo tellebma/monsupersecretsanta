@@ -4,15 +4,28 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 
 | Priorité | Sujet | État | Résultat attendu ou condition de reprise |
 | --- | --- | --- | --- |
-| P0 | Retirer un participant avant le tirage | En cours | L’organisateur peut retirer un membre en brouillon ou avant l’attribution. Un tirage programmé reste cohérent. |
-| P0 | Recherche, import des cadeaux et parallaxe | En cours | Publier et vérifier les parcours de la [pull request](https://github.com/tellebma/monsupersecretsanta/pull/2). |
 | P0 | Connexion Google en production | Bloqué | Accéder à une session Google Cloud autorisée, puis configurer le client OAuth Web dans Supabase et vérifier la redirection. |
 | P1 | Connexion Apple en production | Bloqué | Configurer le client Web du compte Apple Developer dans Supabase, puis tester le parcours avec l’adresse Apple masquée. |
-| P1 | Préproduction hébergée peuplée | Bloqué | Raccorder la branche Vercel protégée au projet Supabase séparé `monsupersecretsanta-preprod` quand il est disponible. |
+| P1 | Préproduction hébergée peuplée | Bloqué | L’organisation Supabase dispose déjà de deux projets actifs et le projet dédié `monsupersecretsanta-preprod` n’existe pas. Raccorder la branche Vercel protégée à une base dédiée lorsqu’un emplacement est disponible. |
 | P1 | Élargir la recherche à davantage de marchands | À faire | Le catalogue intégré fonctionne sans clé. Activer la recherche Brave après configuration d’un compte autorisé et vérifier les résultats français. |
-| P1 | Prioriser les intégrations marchandes | À faire | Examiner les compteurs des imports incomplets et renforcer les marchands les plus demandés quand des données sont disponibles. |
+| P1 | Renforcer l’import chez les marchands les plus demandés | En attente de données | Le rapport a été exécuté en production et ne contient encore aucune tentative incomplète. Utiliser les premiers résultats pour choisir les marchands à traiter. |
 | P2 | Domaine MonSuperSecretSanta.fr | Bloqué | Raccorder le domaine à Vercel après son enregistrement. |
 | P2 | Détection des arnaques et du dropshipping | À cadrer | Définir les signaux et le comportement souhaité avant d’ajouter une règle de blocage. |
+
+## Livré
+
+| Priorité | Sujet | Résultat |
+| --- | --- | --- |
+| P0 | Retirer un participant avant le tirage | Disponible en production pour l’organisateur, en brouillon ou avant l’attribution. |
+| P0 | Recherche et import des cadeaux | Recherche intégrée, import par lien, saisie avec le nom seul et comptage des imports incomplets en production. |
+| P1 | Parallaxe des cadeaux | Disponible sur l’accueil, avec prise en charge du mouvement réduit. |
+
+Ces trois changements ont été livrés dans la [pull request 2](https://github.com/tellebma/monsupersecretsanta/pull/2).
+
+| Priorité | Sujet | Résultat |
+| --- | --- | --- |
+| P1 | Rapport des imports incomplets par marchand | [Requête SQL en lecture seule](supabase/reports/gift-import-failures.sql) avec le total des tentatives incomplètes, le nombre d’URL distinctes et la date de la dernière tentative incomplète. |
+| P1 | Fiches mode dans le catalogue intégré | Liens directs vers des produits H&M, Kiabi, Uniqlo et Zara, disponibles sans la recherche Brave. |
 
 ## Périmètre fonctionnel à préserver
 

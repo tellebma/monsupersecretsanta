@@ -2,6 +2,35 @@
 
 Une application web française, utilisable sur mobile, pour organiser ses tirages et partager une liste de cadeaux entre plusieurs groupes.
 
+## Suivi des tâches
+
+**P0** prioritaire · **P1** important · **P2** amélioration ultérieure. Le [backlog complet](BACKLOG.md) détaille les règles du produit et les conditions de reprise.
+
+### Fait
+
+| Priorité | Tâche |
+| --- | --- |
+| P0 | Comptes par mail, invitations et tirages automatiques avec exceptions et historique |
+| P0 | Liste de cadeaux commune et réservations entre groupes, avec rappels par mail |
+| P0 | Retrait d’un participant par l’organisateur avant le tirage |
+| P0 | Recherche de cadeaux, import par lien, compteur d’échecs et saisie avec le nom seul |
+| P1 | Parallaxe des cadeaux sur l’accueil, avec prise en charge du mouvement réduit |
+| P1 | Rapport SQL des imports incomplets par marchand |
+| P1 | Ajout de fiches H&M, Kiabi, Uniqlo et Zara au catalogue intégré |
+| P1 | Production publique, préprod Vercel protégée, données fictives en local et CI sur quatre profils navigateur |
+
+### Reste à faire
+
+| Priorité | Tâche | État |
+| --- | --- | --- |
+| P0 | Activer la connexion Google | Bloqué par l’accès à Google Cloud |
+| P1 | Activer la connexion Apple | Bloqué par la configuration Apple Developer |
+| P1 | Raccorder les données fictives à la préprod hébergée | En attente du projet Supabase dédié |
+| P1 | Renforcer l’import chez les marchands les plus demandés | En attente de données dans le rapport |
+| P1 | Étendre la recherche à plus de marchands | En attente d’un compte Brave autorisé |
+| P2 | Raccorder `MonSuperSecretSanta.fr` | En attente de l’enregistrement du domaine |
+| P2 | Détecter les arnaques et le dropshipping | À cadrer |
+
 ## Démarrer en local
 
 Lancez `npm ci`, puis `npm run dev`. L’accueil est disponible sur [localhost:3000](http://localhost:3000). Copiez `.env.example` vers `.env.local` et renseignez les variables pour activer les comptes et les groupes. Les fichiers d’environnement locaux sont ignorés par Git.
@@ -19,7 +48,7 @@ Lancez `npm ci`, puis `npm run dev`. L’accueil est disponible sur [localhost:3
 
 L’import lit les informations publiées par les pages marchandes accessibles en HTTPS. Le lien peut toujours être enregistré manuellement avec un nom, même si le marchand refuse l’accès ou si sa fiche est incomplète. L’import reflète les informations présentes au moment de l’ajout.
 
-La table privée `santa.gift_import_failures` comptabilise les tentatives où le nom, l’image ou la description n’a pas pu être récupéré. Pour prioriser les marchands, agrégez `sum(attempt_count)` par `merchant`. La table conserve l’URL normalisée et écarte les fragments et les paramètres sans rapport avec l’identification du produit.
+La table privée `santa.gift_import_failures` comptabilise les tentatives où le nom, l’image ou la description n’a pas pu être récupéré. Exécutez le [rapport des imports incomplets](supabase/reports/gift-import-failures.sql) dans l’éditeur SQL de Supabase avec un accès administrateur. Cette requête en lecture seule classe les marchands par nombre de tentatives incomplètes et indique le nombre d’URL distinctes ainsi que la date de la dernière tentative incomplète. Elle affiche uniquement les résultats agrégés.
 
 La recherche fonctionne sans clé grâce à une sélection de produits sur des pages marchandes vérifiées et aux liens déjà enregistrés par la personne connectée. Les fiches de cette sélection renvoient aux marchands pour le prix et le stock.
 
