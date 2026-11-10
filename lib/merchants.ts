@@ -1,35 +1,7 @@
-import { load } from "cheerio";
+import { load, loadBuffer } from "cheerio";
 import { safeLink } from "./format";
+import { publicMerchantUrl, readMerchantPage } from "./merchant-http";
 import type { Link } from "./types";
-
-const retailers = [
-  "amazon.fr", "boulanger.com", "fnac.com", "decathlon.fr", "ikea.com", "zara.com", "kiabi.com", "hm.com",
-];
-const hostnames = new Set(retailers.flatMap((host) => [host, `www.${host}`]).concat("m.boulanger.com", "www2.hm.com"));
-const maxBytes = 2_500_000;
-
-function merchantUrl(value: string) {
-  const url = safeLink(value);
-  return url && url.protocol === "https:" && !url.port && hostnames.has(url.hostname) ? url : null;
-}
-
-async function documentText(response: Response) {
-  if (!response.body || Number(response.headers.get("content-length")) > maxBytes) throw new Error("Page trop volumineuse.");
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let size = 0;
-  let html = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) return html + decoder.decode();
-    size += value.byteLength;
-    if (size > maxBytes) {
-      await reader.cancel();
-      throw new Error("Page trop volumineuse.");
-    }
-    html += decoder.decode(value, { stream: true });
-  }
-}
 
 type RecordValue = Record<string, unknown>;
 function record(value: unknown): RecordValue | undefined {
@@ -59,8 +31,8 @@ function text(value: unknown, limit: number) {
   return typeof value === "string" ? value.trim().slice(0, limit) || undefined : undefined;
 }
 
-export function productFromHtml(html: string, url: URL): Link | null {
-  const $ = load(html);
+export function productFromHtml(html: string | Buffer, url: URL, merchantCanonicalOnly = false): Link | null {
+  const $ = typeof html === "string" ? load(html) : loadBuffer(html);
   const meta = (key: string) => $(`meta[property="${key}"], meta[name="${key}"], meta[itemprop="${key}"]`).first().attr("content");
   let product: RecordValue | undefined;
   for (const script of $('script[type="application/ld+json"]').toArray()) {
@@ -78,17 +50,31 @@ export function productFromHtml(html: string, url: URL): Link | null {
   const amount = typeof priceText === "number" ? priceText : Number(String(priceText ?? "").replace(",", "."));
   const price = priceText !== "" && priceText != null && Number.isFinite(amount) && amount >= 0 ? amount : undefined;
   if (!name || (!product && !meta("product:price:amount") && meta("og:type") !== "product" && !$("#productTitle").length)) return null;
+  let productUrl = url.href;
+  if (merchantCanonicalOnly) {
+    const declared = [$('link[rel~="canonical"]').first().attr("href"), meta("og:url"), product?.url];
+    let canonical: URL | null = null;
+    for (const value of declared) {
+      if (typeof value !== "string" || !value.trim() || value.length > 2048) continue;
+      try {
+        const candidate = publicMerchantUrl(new URL(value, url).href);
+        if (candidate?.hostname === url.hostname) { canonical = candidate; break; }
+      } catch { /* Try the next declared product URL. */ }
+    }
+    if (!canonical) return null;
+    productUrl = canonical.href;
+  }
   const imageSource = [product?.image].flat()[0];
   const rawImage = text(record(imageSource)?.url ?? record(imageSource)?.contentUrl ?? imageSource ??
     meta("og:image") ?? $("#landingImage").attr("src"), 2048);
   let image: string | undefined;
   if (rawImage) {
     try {
-      image = safeLink(new URL(rawImage, url).href)?.href;
+      image = publicMerchantUrl(new URL(rawImage, url).href)?.href;
     } catch { /* The rest of the product is usable. */ }
   }
   return {
-    url: url.href,
+    url: productUrl,
     name,
     description: text(product?.description ?? meta("og:description") ?? meta("description"), 1500),
     image,
@@ -98,27 +84,30 @@ export function productFromHtml(html: string, url: URL): Link | null {
   };
 }
 
-export async function importProduct(value: string) {
-  let url = merchantUrl(value);
-  if (!url) return null;
-  const signal = AbortSignal.timeout(6500);
+export async function importProduct(value: string, {
+  signal: callerSignal,
+  merchantCanonicalOnly = false,
+  readPage = readMerchantPage,
+}: {
+  signal?: AbortSignal;
+  merchantCanonicalOnly?: boolean;
+  readPage?: typeof readMerchantPage;
+} = {}) {
+  const original = safeLink(value);
+  let url = publicMerchantUrl(value);
+  if (!original || !url) return null;
+  const timeout = AbortSignal.timeout(6500);
+  const signal = callerSignal ? AbortSignal.any([timeout, callerSignal]) : timeout;
   for (let redirects = 0; redirects <= 3; redirects++) {
-    const response: Response = await fetch(url, {
-      redirect: "manual",
-      signal,
-      cache: "no-store",
-      headers: { "Accept-Language": "fr-FR,fr;q=0.9", Accept: "text/html,application/xhtml+xml" },
-    });
-    if (response.status >= 300 && response.status < 400) {
-      await response.body?.cancel();
-      const location: string | null = response.headers.get("location");
-      url = location && merchantUrl(new URL(location, url).href) || null;
+    const page = await readPage(url, signal);
+    if (!page) return null;
+    if ("redirect" in page) {
+      url = publicMerchantUrl(new URL(page.redirect, url).href);
       if (!url) return null;
       continue;
     }
-    if (!response.ok || !response.headers.get("content-type")?.includes("html")) return null;
-    const product = productFromHtml(await documentText(response), url);
-    return product && { ...product, url: value };
+    const product = productFromHtml(page.html, url, merchantCanonicalOnly);
+    return product && (merchantCanonicalOnly ? product : { ...product, url: original.href });
   }
   return null;
 }

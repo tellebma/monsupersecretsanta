@@ -51,7 +51,9 @@ test("verifies invitations, keeps draws private, and reserves gifts across group
       create function auth.uid() returns uuid language sql stable as
         $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     `);
-    await db.exec(await readFile(new URL("../supabase/migrations/202611090001_initial.sql", import.meta.url), "utf8"));
+    for (const migration of ["202611090001_initial.sql", "202611100001_gift_imports.sql"]) {
+      await db.exec(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), "utf8"));
+    }
     const query = async (sql, params = []) => (await db.query(sql, params)).rows;
     const scalar = async (sql, params) => Object.values((await query(sql, params))[0])[0];
     async function user(id, role = id ? "authenticated" : null) {
@@ -102,6 +104,15 @@ test("verifies invitations, keeps draws private, and reserves gifts across group
     await assert.rejects(() => query("select * from santa.draws"), /permission denied/);
     await assert.rejects(() => call("due_draws"), /permission denied/);
     await assert.rejects(() => query("select santa_configure($1,now(),now()+interval '1 day',null,'{}','[]',false)", [a]), /définitif/);
+    await user(recipient);
+    const manual = await call("save_gift", [null, "Cadeau sans description", "", "[]"]);
+    assert.equal((await call("my_gifts")).find((item) => item.id === manual).description, "");
+    await assert.rejects(() => call("record_import_failure", ["https://example.org/produit", "example.org"]), /permission denied/);
+    await user(null, "service_role");
+    await call("record_import_failure", ["https://example.org/produit", "example.org"]);
+    await call("record_import_failure", ["https://example.org/produit", "example.org"]);
+    await user();
+    assert.equal(Number(await scalar("select attempt_count from santa.gift_import_failures where url=$1", ["https://example.org/produit"])), 2);
     await user(recipient);
     const gift = await call("save_gift", [null, "Livre", "Une édition illustrée", "[]"]);
     await user(first);

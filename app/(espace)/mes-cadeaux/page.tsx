@@ -18,7 +18,7 @@ export default async function MyGifts() {
       <Link className="button" href="/mes-cadeaux/nouveau">Ajouter un cadeau</Link>
     </div>
     {gifts.length === 0 && <div className="panel empty"><div className="brand-mark"><GiftIcon/></div>
-      <h2>Ta liste est encore vide</h2><p>Ajoute une première idée avec une description et, si tu en as, des liens marchands.</p></div>}
+      <h2>Ta liste est encore vide</h2><p>Ajoute une première idée. Tu peux la compléter avec une description et des liens marchands.</p></div>}
     <div className="card-grid">{gifts.map((gift) => <GiftCard gift={gift} key={gift.id}/>)}</div>
   </div>;
 }

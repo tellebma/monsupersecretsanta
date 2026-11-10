@@ -7,6 +7,27 @@ export function configured() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 }
 
+export async function socialProviderStatus(provider: "google" | "apple") {
+  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!projectUrl || !key) return undefined;
+
+  try {
+    const response = await fetch(new URL("/auth/v1/settings", projectUrl), {
+      cache: "no-store",
+      headers: { apikey: key },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!response.ok) return undefined;
+
+    const settings = await response.json();
+    const enabled = settings?.external?.[provider];
+    return typeof enabled === "boolean" ? enabled : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function session() {
   const jar = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {

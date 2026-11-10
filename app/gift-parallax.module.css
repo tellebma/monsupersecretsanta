@@ -1,0 +1,18 @@
+.illustration {
+  display: block;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .backGift {
+    transform: translateY(calc(var(--gift-parallax, 0) * 12px));
+  }
+
+  .frontGift {
+    transform: translateY(calc(var(--gift-parallax, 0) * -24px));
+  }
+
+  .sparkles {
+    transform: translateY(calc(var(--gift-parallax, 0) * -14px));
+  }
+}

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Brand, GiftIcon } from "./brand";
+import { GiftParallax } from "./gift-parallax";
+import styles from "./gift-parallax.module.css";
 
 function Wrapping() {
-  return <svg className="wrapping" viewBox="0 0 520 465" fill="none" aria-hidden="true">
+  return <GiftParallax><svg className={styles.illustration} viewBox="0 0 520 465" fill="none" focusable="false">
     <defs>
       <pattern id="dots" x="0" y="0" width="23" height="23" patternUnits="userSpaceOnUse">
         <circle cx="9" cy="9" r="2.8" fill="#f8b59a"/>
@@ -13,23 +15,29 @@ function Wrapping() {
     </defs>
     <path d="M99 352c-41-51-56-104-31-171 22-63 78-105 141-104 81 1 105 50 157 58 70 11 112 32 124 100 11 65-25 125-79 154-44 23-103 20-144 20-75 0-132-13-168-57Z" fill="#fff1db"/>
     <ellipse cx="278" cy="384" rx="187" ry="26" fill="#f3dabe"/>
-    <g transform="rotate(-14 158 264)">
-      <rect x="76" y="230" width="170" height="122" rx="8" fill="url(#lines)"/>
-      <rect x="67" y="210" width="188" height="35" rx="7" fill="#f7a68f"/>
-      <path d="M143 210h36v142h-36z" fill="#b64445"/>
-      <path d="M160 211c-17-42-53-43-53-20 0 18 31 21 53 20Zm0 0c13-44 52-51 54-25 1 20-28 24-54 25Z" stroke="#b64445" strokeWidth="9" strokeLinejoin="round"/>
+    <g className={styles.backGift}>
+      <g transform="rotate(-14 158 264)">
+        <rect x="76" y="230" width="170" height="122" rx="8" fill="url(#lines)"/>
+        <rect x="67" y="210" width="188" height="35" rx="7" fill="#f7a68f"/>
+        <path d="M143 210h36v142h-36z" fill="#b64445"/>
+        <path d="M160 211c-17-42-53-43-53-20 0 18 31 21 53 20Zm0 0c13-44 52-51 54-25 1 20-28 24-54 25Z" stroke="#b64445" strokeWidth="9" strokeLinejoin="round"/>
+      </g>
     </g>
-    <g transform="rotate(8 329 261)">
-      <rect x="205" y="193" width="251" height="172" rx="10" fill="#184d3e"/>
-      <rect x="205" y="193" width="251" height="172" rx="10" fill="url(#dots)"/>
-      <rect x="195" y="164" width="271" height="51" rx="8" fill="#1f6049"/>
-      <path d="M305 164h49v201h-49z" fill="#efc770"/>
-      <path d="M329 166c-12-57-77-74-79-40-2 28 45 40 79 40Zm0 0c20-61 75-71 76-36 1 26-42 35-76 36Z" stroke="#efc770" strokeWidth="12" strokeLinejoin="round"/>
-      <path d="m331 169-44 61m42-62 40 49" stroke="#efc770" strokeWidth="12" strokeLinecap="round"/>
+    <g className={styles.frontGift}>
+      <g transform="rotate(8 329 261)">
+        <rect x="205" y="193" width="251" height="172" rx="10" fill="#184d3e"/>
+        <rect x="205" y="193" width="251" height="172" rx="10" fill="url(#dots)"/>
+        <rect x="195" y="164" width="271" height="51" rx="8" fill="#1f6049"/>
+        <path d="M305 164h49v201h-49z" fill="#efc770"/>
+        <path d="M329 166c-12-57-77-74-79-40-2 28 45 40 79 40Zm0 0c20-61 75-71 76-36 1 26-42 35-76 36Z" stroke="#efc770" strokeWidth="12" strokeLinejoin="round"/>
+        <path d="m331 169-44 61m42-62 40 49" stroke="#efc770" strokeWidth="12" strokeLinecap="round"/>
+      </g>
     </g>
-    <path d="M92 133v32m-16-16h32m300-86v38m-19-19h38M476 161v25m-12.5-12.5h25M151 83v25m-12.5-12.5h25" stroke="#be514a" strokeWidth="3" strokeLinecap="round"/>
-    <circle cx="457" cy="122" r="4" fill="#d39e42"/><circle cx="107" cy="192" r="4" fill="#d39e42"/><circle cx="50" cy="264" r="4" fill="#d39e42"/>
-  </svg>;
+    <g className={styles.sparkles}>
+      <path d="M92 133v32m-16-16h32m300-86v38m-19-19h38M476 161v25m-12.5-12.5h25M151 83v25m-12.5-12.5h25" stroke="#be514a" strokeWidth="3" strokeLinecap="round"/>
+      <circle cx="457" cy="122" r="4" fill="#d39e42"/><circle cx="107" cy="192" r="4" fill="#d39e42"/><circle cx="50" cy="264" r="4" fill="#d39e42"/>
+    </g>
+  </svg></GiftParallax>;
 }
 
 export default function Home() {

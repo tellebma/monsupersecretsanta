@@ -3,9 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { appOrigin, nextPath, parisInstant, safeLink } from "@/lib/format";
-import { configured, requireSession, session } from "@/lib/supabase";
+import { appOrigin, nextPath, parisInstant, safeLink, safeProductImage } from "@/lib/format";
+import { configured, requireSession, session, socialProviderStatus, workerClient } from "@/lib/supabase";
 import { importProduct } from "@/lib/merchants";
+import { importFailureKey } from "@/lib/merchant-http";
 import type { Link } from "@/lib/types";
 
 export type Result = { error?: string; message?: string; stage?: "verify" | "password" | "invite_code"; email?: string };
@@ -50,13 +51,16 @@ export async function emailAccount(mode: "signup" | "reset", previous: Result, d
 
 export async function social(provider: "google" | "apple", _: Result, data: FormData): Promise<Result> {
   if (!configured()) return authUnavailable;
+  const unavailable = { error: "Cette méthode de connexion est temporairement indisponible." };
+  if (await socialProviderStatus(provider) === false) return unavailable;
+
   const callback = new URL("/auth/callback", appOrigin());
   (await cookies()).set("santa-oauth-next", nextPath(field(data, "next")), {
     httpOnly: true, sameSite: "lax", secure: callback.protocol === "https:", path: "/auth/callback", maxAge: 600,
   });
   const db = await session();
   const { data: result, error } = await db.auth.signInWithOAuth({ provider, options: { redirectTo: callback.href } });
-  if (error || !result.url) return { error: "Cette méthode de connexion est temporairement indisponible." };
+  if (error || !result.url) return unavailable;
   redirect(result.url);
 }
 
@@ -152,7 +156,7 @@ function readLinks(value: string): Link[] {
   for (const item of submitted) {
     const url = safeLink(item?.url);
     if (!url) throw new Error("Vérifiez les liens. Ils doivent commencer par https:// ou http://.");
-    const image = safeLink(item.image);
+    const image = safeProductImage(item.image);
     links.set(url.href, {
       url: url.href, name: item.name?.slice(0, 200), description: item.description?.slice(0, 1500), image: image?.href,
       price: typeof item.price === "number" && Number.isFinite(item.price) && item.price >= 0 ? item.price : undefined,
@@ -184,7 +188,15 @@ export async function removeGift(id: string, _: Result): Promise<Result> {
 
 export async function fetchProduct(value: string): Promise<Link | null> {
   await requireSession();
-  try { return await importProduct(value); } catch { return null; }
+  const key = importFailureKey(value);
+  if (!key) return null;
+  const product = await importProduct(value).catch(() => null);
+  if ((!product?.name || !product.description || !product.image) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { error } = await workerClient().rpc("santa_record_import_failure", { p_url: key.url, p_merchant: key.merchant })
+      .abortSignal(AbortSignal.timeout(1500));
+    if (error) console.error("Import marchand : enregistrement du compteur impossible", error.code);
+  }
+  return product;
 }
 
 export async function giftClaim(edition: string, gift: string, _: Result, data: FormData): Promise<Result> {

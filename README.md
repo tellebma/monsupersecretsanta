@@ -17,7 +17,15 @@ Lancez `npm ci`, puis `npm run dev`. L’accueil est disponible sur [localhost:3
 
 `npm test` couvre le tirage, les invitations, la confidentialité, les règles de réservation et l’import des produits. `npm run build` vérifie le typage et la compilation de production.
 
-L’application tente d’importer les fiches produit d’Amazon France, Boulanger, Fnac, Decathlon, IKEA, Zara, Kiabi et H&M. Lorsque la fiche ne fournit pas les données ou refuse l’accès, le lien reste utilisable et l’utilisateur peut saisir les détails. L’import reflète les informations présentes au moment de l’ajout. La détection des sites douteux est à faire.
+L’import lit les informations publiées par les pages marchandes accessibles en HTTPS. Le lien peut toujours être enregistré manuellement avec un nom, même si le marchand refuse l’accès ou si sa fiche est incomplète. L’import reflète les informations présentes au moment de l’ajout.
+
+La table privée `santa.gift_import_failures` comptabilise les tentatives où le nom, l’image ou la description n’a pas pu être récupéré. Pour prioriser les marchands, agrégez `sum(attempt_count)` par `merchant`. La table conserve l’URL normalisée et écarte les fragments et les paramètres sans rapport avec l’identification du produit.
+
+La recherche fonctionne sans clé grâce à une sélection de produits sur des pages marchandes vérifiées et aux liens déjà enregistrés par la personne connectée. Les fiches de cette sélection renvoient aux marchands pour le prix et le stock.
+
+La [Web Search API de Brave](https://api-dashboard.search.brave.com/documentation/services/web-search) peut étendre la recherche à plusieurs marchands. Les fiches affichées proviennent des pages marchandes. L’API reste désactivée par défaut. Pour l’activer, renseignez `BRAVE_SEARCH_ENABLED=true` et `BRAVE_SEARCH_API_KEY` côté serveur, après avoir adapté les conditions d’utilisation aux [exigences de Brave](https://api-dashboard.search.brave.com/documentation/resources/terms-of-service) et informé les utilisateurs de la transmission de leurs recherches. Le plan Search facture 5 dollars par millier de requêtes avec 5 dollars de crédit mensuel et une carte requise à l’activation. L’application limite la recherche externe à 25 requêtes par compte et par jour et à 1 000 requêtes par mois. Configurez également un plafond dans [le tableau de bord Brave](https://api-dashboard.search.brave.com/documentation/resources/help-feedback).
+
+Les [API partenaires d’idealo](https://partner.idealo.com/partner-idealo-com/uk/learning-center/faq-technical-integration) documentent l’envoi des offres des marchands vers idealo. Pour élargir l’index à partir de catalogues autorisés, il est aussi possible d’intégrer des [flux produits d’annonceurs](https://help.awin.com/developers/docs/downloading-a-list-of-your-product-feeds).
 
 ## Préproduction et tests d’acceptation
 

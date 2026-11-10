@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { giftClaim, removeGift } from "@/app/actions";
 import { ActionForm, Submit } from "@/app/components";
-import { priceLabel, safeLink } from "@/lib/format";
+import { priceLabel, safeLink, safeProductImage } from "@/lib/format";
 import type { Gift } from "@/lib/types";
 
 const statuses = { reserved: "Réservé par toi", unavailable: "Indisponible", bought: "Déjà acheté" };
@@ -16,12 +16,12 @@ export default function GiftCard({ gift, edition, closed = false }: { gift: Gift
       <h3>{gift.name}</h3>
       {gift.status && <span className="pill">{statuses[gift.status]}</span>}
     </div>
-    <p className="gift-description">{gift.description}</p>
+    {gift.description && <p className="gift-description">{gift.description}</p>}
     {gift.links.length > 0 && <ul className="merchant-list">
       {gift.links.map((offer) => {
         const url = safeLink(offer.url);
         if (!url) return null;
-        const image = safeLink(offer.image);
+        const image = safeProductImage(offer.image);
         const available = typeof offer.availability === "string" ? offer.availability.split(/[\/#]/).at(-1)?.toLowerCase() : undefined;
         return <li className="offer" key={url.href}>
           {image && <img src={image.href} width="60" height="60" alt="" loading="lazy" referrerPolicy="no-referrer"/>}
