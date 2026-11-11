@@ -5,7 +5,7 @@ import { catalogQuery, findCatalogProducts, uniqueCatalogProducts, type CatalogP
 import { configured, session, workerClient } from "@/lib/supabase";
 import type { Gift } from "@/lib/types";
 
-const merchantSearch = unstable_cache((query: string) => searchMerchantCatalog(query), ["gift-merchants-v1"], { revalidate: 900 });
+const merchantSearch = unstable_cache((query: string) => searchMerchantCatalog(query), ["gift-merchants-v2"], { revalidate: 900 });
 
 function reply(products: CatalogProduct[], status: "ok" | "unavailable" | "limited", code = 200) {
   return Response.json({ products, status }, { status: code, headers: { "Cache-Control": "private, no-store" } });
