@@ -7,8 +7,8 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 | P0 | Connexion Google en production | Bloqué | Accéder à une session Google Cloud autorisée, puis configurer le client OAuth Web dans Supabase et vérifier la redirection. |
 | P1 | Connexion Apple en production | Bloqué | Configurer le client Web du compte Apple Developer dans Supabase, puis tester le parcours avec l’adresse Apple masquée. |
 | P1 | Préproduction hébergée peuplée | Bloqué | L’organisation Supabase dispose déjà de deux projets actifs et le projet dédié `monsupersecretsanta-preprod` n’existe pas. Raccorder la branche Vercel protégée à une base dédiée lorsqu’un emplacement est disponible. |
-| P1 | Élargir la recherche à davantage de marchands | À faire | Le catalogue intégré fonctionne sans clé. Activer la recherche Brave après configuration d’un compte autorisé et vérifier les résultats français. |
-| P1 | Renforcer l’import chez les marchands les plus demandés | En attente de données | Le rapport a été exécuté en production et ne contient encore aucune tentative incomplète. Utiliser les premiers résultats pour choisir les marchands à traiter. |
+| P1 | Élargir encore la recherche à davantage de marchands | À faire | Fnac et Boulanger sont interrogés directement. Ajouter d’autres sources accessibles ou activer Brave après configuration d’un compte autorisé. |
+| P1 | Renforcer l’import chez les marchands les plus demandés | À suivre | Deux tentatives Amazon incomplètes sont enregistrées. La fiche retestée fournit les informations. Continuer à suivre les marchands qui refusent l’accès ou fournissent des données partielles. |
 | P2 | Domaine MonSuperSecretSanta.fr | Bloqué | Raccorder le domaine à Vercel après son enregistrement. |
 | P2 | Détection des arnaques et du dropshipping | À cadrer | Définir les signaux et le comportement souhaité avant d’ajouter une règle de blocage. |
 
@@ -28,6 +28,9 @@ Ces trois changements ont été livrés dans la [pull request 2](https://github.
 | P1 | Fiches mode dans le catalogue intégré | Liens directs vers des produits H&M, Kiabi, Uniqlo et Zara, disponibles sans la recherche Brave. |
 | P1 | Mettre en avant la recherche de cadeaux | Bouton « Chercher un cadeau » sur la liste et écran dédié. Des idées sont proposées dès l’ouverture. Une fiche est préremplie après sélection. Si la recherche ne donne aucun résultat, l’import par lien et d’autres idées restent disponibles. |
 | P1 | Clarifier le parcours de recherche sur mobile et ordinateur | Résultats en cartes, accès permanent à l’import par lien et repère pour retrouver la fiche en cours. |
+| P1 | Recherche marchande et images | Jusqu’à 24 fiches issues de Fnac et Boulanger, avec leurs images. L’import tente les autres images de la page si la première est vide ou invalide. Les images déjà chargées dans le navigateur sont reconnues. |
+| P1 | Image principale dans « Ma liste » | Chaque carte affiche une grande photo dès qu’un de ses liens marchands contient une image. |
+| P1 | Navigation et états des pages | Section active, lien clavier vers le contenu et actions contextualisées. Chargement, erreur récupérable et page introuvable en français. |
 | P0 | Retrouver sa session à la réouverture du navigateur | Le cookie de session persiste et l’accueil affiche « Mon espace » quand la session est active. |
 
 ## Périmètre fonctionnel à préserver

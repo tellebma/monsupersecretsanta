@@ -75,6 +75,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Utiliser des ports fixes hors de la plage des connexions sortantes
+        run: sed -i -e 's/54321/15421/g' -e 's/54322/15422/g' -e 's/54324/15424/g' supabase/config.toml
       - run: npm run preprod:local
       - run: npm run build:preprod
       - run: npm run test:e2e -- --project=${{ matrix.browser }}

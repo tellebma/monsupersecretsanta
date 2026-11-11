@@ -17,6 +17,8 @@ Une application web française, utilisable sur mobile, pour organiser ses tirage
 | P1 | Écran « Chercher un cadeau » avec suggestions dès l’ouverture et préremplissage après sélection |
 | P1 | Parallaxe des cadeaux sur l’accueil, avec prise en charge du mouvement réduit |
 | P1 | Rapport SQL des imports incomplets par marchand |
+| P1 | Recherche de produits sur Fnac et Boulanger avec plusieurs résultats et images |
+| P1 | Navigation active, accès clavier au contenu et pages de chargement, d’erreur et introuvable en français |
 | P1 | Ajout de fiches H&M, Kiabi, Uniqlo et Zara au catalogue intégré |
 | P1 | Production publique, préprod Vercel protégée, données fictives en local et CI sur quatre profils navigateur |
 
@@ -51,7 +53,7 @@ L’import lit les informations publiées par les pages marchandes accessibles e
 
 La table privée `santa.gift_import_failures` comptabilise les tentatives où le nom, l’image ou la description n’a pas pu être récupéré. Exécutez le [rapport des imports incomplets](supabase/reports/gift-import-failures.sql) dans l’éditeur SQL de Supabase avec un accès administrateur. Cette requête en lecture seule classe les marchands par nombre de tentatives incomplètes et indique le nombre d’URL distinctes ainsi que la date de la dernière tentative incomplète. Elle affiche uniquement les résultats agrégés.
 
-La recherche fonctionne sans clé grâce à une sélection de produits sur des pages marchandes vérifiées et aux liens déjà enregistrés par la personne connectée. Les fiches de cette sélection renvoient aux marchands pour le prix et le stock.
+La recherche interroge les pages publiques de résultats de Fnac et Boulanger et complète les réponses avec une sélection vérifiée et les liens de la personne connectée. Elle affiche jusqu’à 24 produits, avec les images publiées par les boutiques. Les recherches marchandes sont mises en cache pendant 15 minutes. Le prix et le stock se vérifient chez le marchand. Une boutique qui refuse l’accès peut fournir moins de résultats ou empêcher un import.
 
 La [Web Search API de Brave](https://api-dashboard.search.brave.com/documentation/services/web-search) peut étendre la recherche à plusieurs marchands. Les fiches affichées proviennent des pages marchandes. L’API reste désactivée par défaut. Pour l’activer, renseignez `BRAVE_SEARCH_ENABLED=true` et `BRAVE_SEARCH_API_KEY` côté serveur, après avoir adapté les conditions d’utilisation aux [exigences de Brave](https://api-dashboard.search.brave.com/documentation/resources/terms-of-service) et informé les utilisateurs de la transmission de leurs recherches. Le plan Search facture 5 dollars par millier de requêtes avec 5 dollars de crédit mensuel et une carte requise à l’activation. L’application limite la recherche externe à 25 requêtes par compte et par jour et à 1 000 requêtes par mois. Configurez également un plafond dans [le tableau de bord Brave](https://api-dashboard.search.brave.com/documentation/resources/help-feedback).
 

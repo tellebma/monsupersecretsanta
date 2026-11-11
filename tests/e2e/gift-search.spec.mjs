@@ -53,6 +53,9 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("carnet");
   await page.getByRole("searchbox", { name: "Nom du produit" }).press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "2 produits trouvés" })).toBeVisible();
+  const resultImage = page.getByRole("region", { name: "Catalogue de cadeaux" }).locator("img").first();
+  await expect(resultImage).toHaveCSS("opacity", "1");
+  await expect(resultImage).toHaveJSProperty("complete", true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("button", { name: "Choisir " + product.name }).click();
   await expect(page.getByRole("link", { name: "Voir la fiche cadeau" })).toHaveAttribute("href", "#gift-editor");
@@ -72,6 +75,10 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
   await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue("Description personnalisée.");
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
   const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name: product.name }) });
+  const cover = card.locator(".gift-cover img");
+  await expect(cover).toHaveAttribute("src", product.image);
+  await expect(cover).toHaveCSS("opacity", "1");
+  await expect(card.locator(".gift-cover")).toHaveCSS("height", "190px");
   await expect(card.getByRole("link", { name: /Voir le produit sur fnac.com/ })).toHaveAttribute("href", product.url);
   await expect(card.getByRole("link", { name: /Voir le produit sur example.org/ })).toHaveAttribute("href", second.url);
 });
@@ -87,6 +94,7 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
   await expect(page).toHaveURL(/\/mes-cadeaux\/nouveau#gift-product-link$/);
 
   const url = "https://example.org/cadeau-" + randomUUID().slice(0, 8);
+  await expect(page.getByLabel("Lien vers un produit")).toBeEditable();
   await page.getByLabel("Lien vers un produit").evaluate((input, pastedUrl) => {
     const clipboardData = new DataTransfer();
     clipboardData.setData("text/plain", pastedUrl);
@@ -129,13 +137,14 @@ test("le catalogue renvoie des fiches marchandes uniquement aux comptes connect�
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(/STRIMMIG/);
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("skyjo");
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "1 produit trouvé" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Choisir Skyjo/ })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /\d+ produits? trouvés/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /Choisir .*Skyjo/ }).first()).toBeVisible();
   const response = await page.request.get(path);
   expect(response.ok()).toBe(true);
   expect(response.headers()["cache-control"]).toBe("private, no-store");
-  expect(await response.json()).toMatchObject({
-    status: "ok",
-    products: [expect.objectContaining({ name: expect.stringContaining("Skyjo"), url: expect.stringContaining("fnac.com") })],
-  });
+  const payload = await response.json();
+  expect(payload.status).toBe("ok");
+  expect(payload.products).toEqual(expect.arrayContaining([
+    expect.objectContaining({ name: expect.stringContaining("Skyjo"), url: expect.stringContaining("fnac.com") }),
+  ]));
 });

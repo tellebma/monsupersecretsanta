@@ -3,6 +3,7 @@ import { giftClaim, removeGift } from "@/app/actions";
 import { ActionForm, Submit } from "@/app/components";
 import { priceLabel, safeLink, safeProductImage } from "@/lib/format";
 import type { Gift } from "@/lib/types";
+import { ProductImage } from "@/app/product-image";
 
 const statuses = { reserved: "Réservé par toi", unavailable: "Indisponible", bought: "Déjà acheté" };
 const availability: Record<string, string> = {
@@ -11,7 +12,9 @@ const availability: Record<string, string> = {
 };
 
 export default function GiftCard({ gift, edition, closed = false }: { gift: Gift; edition?: string; closed?: boolean }) {
+  const cover = gift.links.map((offer) => safeProductImage(offer.image)).find(Boolean);
   return <article className="panel gift-card stack">
+    {!edition && cover && <ProductImage src={cover.href} className="gift-cover"/>}
     <div className="inline spread start">
       <h3>{gift.name}</h3>
       {gift.status && <span className="pill">{statuses[gift.status]}</span>}
@@ -24,7 +27,7 @@ export default function GiftCard({ gift, edition, closed = false }: { gift: Gift
         const image = safeProductImage(offer.image);
         const available = typeof offer.availability === "string" ? offer.availability.split(/[\/#]/).at(-1)?.toLowerCase() : undefined;
         return <li className="offer" key={url.href}>
-          {image && <img src={image.href} width="60" height="60" alt="" loading="lazy" referrerPolicy="no-referrer"/>}
+          <ProductImage src={image?.href} size={60}/>
           <div className="break"><a href={url.href} target="_blank" rel="noopener noreferrer">Voir le produit sur {url.hostname.replace(/^www\d*\./, "")} ↗</a>
             {offer.name && offer.name !== gift.name && <p>{offer.name}</p>}
             {offer.description && offer.description !== gift.description && <details><summary>Description du marchand</summary><p>{offer.description}</p></details>}
@@ -35,15 +38,15 @@ export default function GiftCard({ gift, edition, closed = false }: { gift: Gift
       })}
     </ul>}
     {!edition && <div className="inline">
-      <Link className="button outline small" href={`/mes-cadeaux/${gift.id}`}>Modifier</Link>
-      <ActionForm action={removeGift.bind(null, gift.id)}><Submit className="text-button">Retirer de ma liste</Submit></ActionForm>
+      <Link className="button outline small" href={`/mes-cadeaux/${gift.id}`}>Modifier<span className="sr-only"> · {gift.name}</span></Link>
+      <ActionForm action={removeGift.bind(null, gift.id)}><Submit className="text-button">Retirer de ma liste<span className="sr-only"> · {gift.name}</span></Submit></ActionForm>
     </div>}
     {edition && !closed && (!gift.status || (gift.status === "reserved" && gift.mine)) &&
       <ActionForm action={giftClaim.bind(null, edition, gift.id)} className="inline">
         {gift.status ? <>
-          <Submit className="button small" intent="buy">Marquer comme acheté</Submit>
-          <Submit className="text-button" intent="release">Libérer la réservation</Submit>
-        </> : <Submit className="button small" intent="reserve">Réserver ce cadeau</Submit>}
+          <Submit className="button small" intent="buy">Marquer comme acheté<span className="sr-only"> · {gift.name}</span></Submit>
+          <Submit className="text-button" intent="release">Libérer la réservation<span className="sr-only"> · {gift.name}</span></Submit>
+        </> : <Submit className="button small" intent="reserve">Réserver ce cadeau<span className="sr-only"> · {gift.name}</span></Submit>}
       </ActionForm>}
   </article>;
 }

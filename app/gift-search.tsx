@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { GiftIcon } from "./brand";
+import { ProductImage } from "./product-image";
 import { priceLabel, safeLink, safeProductImage } from "@/lib/format";
 import type { Link } from "@/lib/types";
 import styles from "./gift-search.module.css";
 
 type SearchResult = {
-  status: "ok" | "unavailable";
+  status: "ok" | "unavailable" | "limited";
   products: Link[];
 };
 
@@ -61,7 +61,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>
             </svg>
-            <input type="search" autoComplete="off" value={query} minLength={2} maxLength={100}
+            <input type="search" autoComplete="off" value={query} disabled={disabled} minLength={2} maxLength={100}
               placeholder="Skyjo, bonnet, IKEA…" onChange={(event) => {
                 request.current?.abort();
                 request.current = null;
@@ -73,6 +73,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
         </label>
         <button className="button" type="submit" disabled={searching || disabled}>Rechercher</button>
       </form>
+      <p className="hint">Produits de Fnac, Boulanger et de notre sélection. Prix et disponibilité à vérifier chez le marchand.</p>
       <div className={styles.importLink}>
         <span>Tu as déjà un lien vers le produit&nbsp;?</span>
         <a href={productLink}>Importer un lien</a>
@@ -86,9 +87,11 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
     </div>}
     {importing && <p role="status" className="feedback">Import des informations du produit…</p>}
     {searching && <p role="status" className="feedback">Recherche en cours…</p>}
-    {result && !result.products.length && <div className={styles.emptyResult}>
-      <p role="status"><strong>{result.status === "unavailable" ? "La recherche est temporairement indisponible." : "Aucun produit trouvé."}</strong></p>
-      <p>{result.status === "unavailable" ? "Tu peux réessayer dans un instant ou importer un lien." : "Essaie un nom plus court, une marque ou importe le lien du produit."}</p>
+    {result && (!result.products.length || result.status !== "ok") && <div className={styles.emptyResult}>
+      <p role="status"><strong>{result.status === "limited" ? "La recherche auprès des marchands est momentanément limitée." :
+        result.status === "unavailable" ? "La recherche est temporairement indisponible." : "Aucun produit trouvé."}</strong></p>
+      <p>{result.status !== "ok" ? "Tu peux réessayer plus tard, choisir une idée ci-dessous ou importer un lien." :
+        "Essaie un nom plus court, une marque ou importe le lien du produit."}</p>
     </div>}
     {!searching && products.length > 0 && <>
       {matches?.length
@@ -101,11 +104,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
           const retailer = url?.hostname.replace(/^www\d*\./, "");
           const selected = links.some((link) => link.url === url?.href);
           return <li key={product.url} className={styles.product} data-selected={selected}>
-            <div className={styles.productMedia} aria-hidden="true">
-              <GiftIcon size={24}/>
-              {image && <img key={image.href} src={image.href} alt="" width={64} height={64} loading="lazy" referrerPolicy="no-referrer"
-                onLoad={(event) => { event.currentTarget.dataset.loaded = "true"; }}/>}
-            </div>
+            <ProductImage src={image?.href} className={styles.productMedia}/>
             <div className={`break ${styles.productDetails}`}>
               <span className={styles.retailer}>{retailer}</span>
               <strong>{product.name}</strong>

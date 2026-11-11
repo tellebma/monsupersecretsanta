@@ -42,11 +42,13 @@ const starterCatalog: CatalogProduct[] = [
     name: "Skyjo — Jeu de cartes",
     description: "Un jeu de société où le but est de marquer le moins de points, chez Fnac.",
     url: "https://www.fnac.com/Jeu-de-cartes-Blackrock-Games-Skyjo/a13877783/w-4",
+    image: "https://static.fnac-static.com/multimedia/Images/FR/MDM/ef/84/c5/12944623/1505-1/tsp20261103090211/Jeu-de-cartes-Blackrock-Games-Skyjo.jpg",
   },
   {
     name: "Le Petit Prince — Antoine de Saint-Exupéry",
     description: "Le livre en édition reliée, chez Fnac.",
     url: "https://www.fnac.com/a1082197/Le-Petit-Prince-Le-Petit-Prince-Antoine-de-Saint-Exupery",
+    image: "https://static.fnac-static.com/multimedia/PE/Images/FR/NR/55/83/10/1082197/1507-1/tsp20260402091426/Le-Petit-Prince.jpg",
   },
   {
     name: "JBL Tune 520BT — Casque audio Bluetooth",
@@ -58,6 +60,7 @@ const starterCatalog: CatalogProduct[] = [
     name: "Kobo Clara BW — Liseuse",
     description: "Une liseuse à écran noir et blanc pour les livres numériques, chez Boulanger.",
     url: "https://www.boulanger.com/ref/1204906",
+    image: "https://boulanger.scene7.com/is/image/Boulanger/0681495009558_h_f_l_0",
   },
   {
     name: "LEGO Botanicals — Le bouquet de roses",
@@ -68,6 +71,7 @@ const starterCatalog: CatalogProduct[] = [
     name: "Bodum Chambord — Cafetière à piston",
     description: "Une cafetière de 0,5 litre en acier inoxydable, chez Truffaut.",
     url: "https://www.truffaut.com/chambord-cafetiere-a-piston-bodum-4-tasses-0-5-l-acier-inox.html",
+    image: "https://images.truffaut.com/media/catalog/product/0/4/04d4dc6b153cca51.jpg?store=fr&image-type=image",
   },
   {
     name: "Zara — Écharpe en laine",
@@ -157,6 +161,6 @@ export function findCatalogProducts(query: string, gifts: Gift[] = []) {
 }
 
 export function catalogSuggestions() {
-  return ["Skyjo", "tasse en grès", "sac de randonnée", "casque audio", "Lego", "bonnet Kiabi"]
+  return ["Skyjo", "tasse en grès", "lampe de table", "casque audio", "liseuse", "cafetière"]
     .flatMap((query) => findCatalogProducts(query).slice(0, 1));
 }
