@@ -29,6 +29,7 @@ Ces trois changements ont été livrés dans la [pull request 2](https://github.
 | P1 | Mettre en avant la recherche de cadeaux | Bouton « Chercher un cadeau » sur la liste et écran dédié. Des idées sont proposées dès l’ouverture. Une fiche est préremplie après sélection. Si la recherche ne donne aucun résultat, l’import par lien et d’autres idées restent disponibles. |
 | P1 | Clarifier le parcours de recherche sur mobile et ordinateur | Résultats en cartes, accès permanent à l’import par lien et repère pour retrouver la fiche en cours. |
 | P1 | Recherche marchande et images | Jusqu’à 24 fiches issues de Fnac et Boulanger, avec leurs images. L’import tente les autres images de la page si la première est vide ou invalide. Les images déjà chargées dans le navigateur sont reconnues. |
+| P1 | Image principale dans « Ma liste » | Chaque carte affiche une grande photo dès qu’un de ses liens marchands contient une image. |
 | P1 | Navigation et états des pages | Section active, lien clavier vers le contenu et actions contextualisées. Chargement, erreur récupérable et page introuvable en français. |
 | P0 | Retrouver sa session à la réouverture du navigateur | Le cookie de session persiste et l’accueil affiche « Mon espace » quand la session est active. |
 

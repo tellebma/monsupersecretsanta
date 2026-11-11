@@ -12,7 +12,9 @@ const availability: Record<string, string> = {
 };
 
 export default function GiftCard({ gift, edition, closed = false }: { gift: Gift; edition?: string; closed?: boolean }) {
+  const cover = gift.links.map((offer) => safeProductImage(offer.image)).find(Boolean);
   return <article className="panel gift-card stack">
+    {!edition && cover && <ProductImage src={cover.href} className="gift-cover"/>}
     <div className="inline spread start">
       <h3>{gift.name}</h3>
       {gift.status && <span className="pill">{statuses[gift.status]}</span>}

@@ -75,7 +75,10 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
   await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue("Description personnalisée.");
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
   const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name: product.name }) });
-  await expect(card.locator("img").first()).toHaveCSS("opacity", "1");
+  const cover = card.locator(".gift-cover img");
+  await expect(cover).toHaveAttribute("src", product.image);
+  await expect(cover).toHaveCSS("opacity", "1");
+  await expect(card.locator(".gift-cover")).toHaveCSS("height", "190px");
   await expect(card.getByRole("link", { name: /Voir le produit sur fnac.com/ })).toHaveAttribute("href", product.url);
   await expect(card.getByRole("link", { name: /Voir le produit sur example.org/ })).toHaveAttribute("href", second.url);
 });
