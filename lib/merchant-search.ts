@@ -2,13 +2,18 @@ import { loadBuffer } from "cheerio";
 import { publicMerchantUrl, readMerchantPage } from "./merchant-http";
 import { uniqueCatalogProducts, type CatalogProduct } from "./gift-catalog";
 
+const productPaths: Record<string, RegExp> = {
+  "www.fnac.com": /\/a\d+(?:\/|$)/,
+  "www.boulanger.com": /^\/ref\/\d+$/,
+  "www.truffaut.com": /^\/[a-z0-9][a-z0-9-]*\.html$/i,
+};
+
 function productLink(value: unknown, origin: URL) {
   if (typeof value !== "string") return null;
   try {
     const url = publicMerchantUrl(new URL(value, origin).href);
     if (!url || url.hostname !== origin.hostname) return null;
-    const path = origin.hostname === "www.fnac.com" ? /\/a\d+(?:\/|$)/ : /^\/ref\/\d+$/;
-    if (!path.test(url.pathname)) return null;
+    if (!productPaths[origin.hostname]?.test(url.pathname)) return null;
     url.search = "";
     return url.href;
   } catch {
@@ -61,6 +66,19 @@ export function productsFromSearchHtml(html: Buffer, origin: URL): CatalogProduc
       });
     }
   }
+  if (origin.hostname === "www.truffaut.com") {
+    for (const element of $('.product-item[itemprop="itemListElement"]').toArray()) {
+      const item = $(element).find('[itemprop="item"][itemtype$="/Product"]').first();
+      const url = productLink(item.attr("href"), origin);
+      const name = item.children('meta[itemprop="name"]').attr("content")?.trim();
+      const image = item.find("img.product-image-photo").first();
+      if (url && name) products.push({
+        url, name: name.slice(0, 200),
+        image: imageLink(image.attr("data-src"), origin) ?? imageLink(image.attr("src"), origin) ??
+          imageLink(item.find('[itemprop="image"] meta[itemprop="url"]').first().attr("content"), origin),
+      });
+    }
+  }
   return uniqueCatalogProducts(products, 12);
 }
 
@@ -69,12 +87,22 @@ export async function searchMerchantCatalog(query: string, readPage = readMercha
   fnac.search = new URLSearchParams({ Search: query, SCat: "0!1" }).toString();
   const boulanger = new URL("https://www.boulanger.com/resultats");
   boulanger.search = new URLSearchParams({ tr: query }).toString();
+  const truffaut = new URL("https://www.truffaut.com/catalogsearch/result/");
+  truffaut.search = new URLSearchParams({ q: query }).toString();
   const signal = AbortSignal.timeout(6500);
-  const results = await Promise.allSettled([fnac, boulanger].map(async (url) => {
+  const results = await Promise.allSettled([fnac, boulanger, truffaut].map(async (url) => {
     const page = await readPage(url, signal);
     if (!page || !("html" in page)) throw new Error("Catalogue marchand indisponible.");
     return productsFromSearchHtml(page.html, url);
   }));
   if (results.every((result) => result.status === "rejected")) throw new Error("Recherche marchande indisponible.");
-  return uniqueCatalogProducts(results.flatMap((result) => result.status === "fulfilled" ? result.value : []), 24);
+  const batches = results.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
+  const products: CatalogProduct[] = [];
+  for (let rank = 0; rank < 12; rank++) {
+    for (const batch of batches) {
+      const product = batch[rank];
+      if (product) products.push(product);
+    }
+  }
+  return uniqueCatalogProducts(products, 24);
 }

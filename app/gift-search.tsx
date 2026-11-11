@@ -73,7 +73,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
         </label>
         <button className="button" type="submit" disabled={searching || disabled}>Rechercher</button>
       </form>
-      <p className="hint">Produits de Fnac, Boulanger et de notre sélection. Prix et disponibilité à vérifier chez le marchand.</p>
+      <p className="hint">Produits de Fnac, Boulanger, Truffaut et de notre sélection. Prix et disponibilité à vérifier chez le marchand.</p>
       <div className={styles.importLink}>
         <span>Tu as déjà un lien vers le produit&nbsp;?</span>
         <a href={productLink}>Importer un lien</a>

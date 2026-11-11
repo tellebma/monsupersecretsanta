@@ -7,7 +7,7 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 | P0 | Connexion Google en production | Bloqué | Accéder à une session Google Cloud autorisée, puis configurer le client OAuth Web dans Supabase et vérifier la redirection. |
 | P1 | Connexion Apple en production | Bloqué | Configurer le client Web du compte Apple Developer dans Supabase, puis tester le parcours avec l’adresse Apple masquée. |
 | P1 | Préproduction hébergée peuplée | Bloqué | L’organisation Supabase dispose déjà de deux projets actifs et le projet dédié `monsupersecretsanta-preprod` n’existe pas. Raccorder la branche Vercel protégée à une base dédiée lorsqu’un emplacement est disponible. |
-| P1 | Élargir encore la recherche à davantage de marchands | À faire | Fnac et Boulanger sont interrogés directement. Ajouter d’autres sources accessibles ou activer Brave après configuration d’un compte autorisé. |
+| P1 | Élargir encore la recherche à davantage de marchands | En revue | Intégration de Truffaut sur la [branche dédiée](https://github.com/tellebma/monsupersecretsanta/tree/codex/search-truffaut). Les résultats des marchands alternent avant la limite de 24 fiches. Validation CI et prévisualisation protégée à vérifier avant publication. |
 | P1 | Renforcer l’import chez les marchands les plus demandés | À suivre | Deux tentatives Amazon incomplètes sont enregistrées. La fiche retestée fournit les informations. Continuer à suivre les marchands qui refusent l’accès ou fournissent des données partielles. |
 | P2 | Domaine MonSuperSecretSanta.fr | Bloqué | Raccorder le domaine à Vercel après son enregistrement. |
 | P2 | Détection des arnaques et du dropshipping | À cadrer | Définir les signaux et le comportement souhaité avant d’ajouter une règle de blocage. |
