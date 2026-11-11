@@ -12,6 +12,15 @@ async function imageExists(url: string) {
   }
 }
 
+function legoReference(url: URL) {
+  if (/^(?:www\.)?lego\.com$/i.test(url.hostname)) {
+    return /^\/fr-fr\/product\/[a-z0-9-]+-(\d{4,7})\/?$/i.exec(url.pathname)?.[1];
+  }
+  if (/^(?:www\.)?idealo\.fr$/i.test(url.hostname)) {
+    return /^\/prix\/\d+\/lego-[a-z0-9-]+-(\d{4,7})\.html$/i.exec(url.pathname)?.[1];
+  }
+}
+
 export async function importProductMetadata(value: string, {
   importer = importProduct,
   search = searchMerchantCatalog,
@@ -20,8 +29,8 @@ export async function importProductMetadata(value: string, {
   const product = await importer(value).catch(() => null);
   if (safeProductImage(product?.image)) return product;
   const url = safeLink(value);
-  if (!url || !/^(?:www\.)?lego\.com$/i.test(url.hostname)) return product;
-  const setNumber = /^\/fr-fr\/product\/[a-z0-9-]+-(\d{4,7})\/?$/i.exec(url.pathname)?.[1];
+  if (!url) return product;
+  const setNumber = legoReference(url);
   if (!setNumber) return product;
   const officialImage = `https://www.lego.com/cdn/product-assets/product.img.pri/${setNumber}_Prod.png`;
   if (await checkImage(officialImage)) return product ? { ...product, image: officialImage } : { url: url.href, image: officialImage };

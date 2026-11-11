@@ -15,6 +15,10 @@ test("recovers a LEGO image only when the set number matches exactly", async () 
   assert.deepEqual(await importProductMetadata(url, { importer, checkImage: async () => true }), {
     url, image: "https://www.lego.com/cdn/product-assets/product.img.pri/11390_Prod.png",
   });
+  const idealo = "https://www.idealo.fr/prix/207082072/lego-super-mario-game-boy-72046.html";
+  assert.deepEqual(await importProductMetadata(idealo, { importer, checkImage: async () => true }), {
+    url: idealo, image: "https://www.lego.com/cdn/product-assets/product.img.pri/72046_Prod.png",
+  });
   assert.equal(await importProductMetadata(url, {
     importer, checkImage, search: async () => [{ name: "LEGO 113900", image }],
   }), null);
