@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { emailAccount, fetchProduct, login, social, type Result } from "./actions";
 import { safeLink, safeProductImage } from "@/lib/format";
@@ -116,7 +116,9 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [showEditor, setShowEditor] = useState(!startWithSearch);
+  const [ready, setReady] = useState(false);
   const importing = useRef(false);
+  useEffect(() => setReady(true), []);
 
   function addLink(link: Link) {
     const parsed = safeLink(link.url);
@@ -171,7 +173,7 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
   }
 
   return <div className="stack">
-    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={loading || saving} importing={loading} links={links} suggestions={suggestions}
+    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={!ready || loading || saving} importing={loading} links={links} suggestions={suggestions}
       editorVisible={showEditor} onChoose={(product) => {
       if (importing.current) return;
       if (!hasProductDetails(product)) void append(product.url, product);
@@ -179,9 +181,9 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
     }}/>}
     {showEditor && <form id="gift-editor" action={submit} className="panel stack" aria-label="Fiche cadeau">
       {startWithSearch && <h2>Ta fiche cadeau</h2>}
-      <label>Nom du cadeau<input name="name" maxLength={200} required value={name} onChange={(event) => setName(event.target.value)}/></label>
+      <label>Nom du cadeau<input name="name" maxLength={200} required disabled={!ready || saving} value={name} onChange={(event) => setName(event.target.value)}/></label>
       <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Facultative"
-        value={description} onChange={(event) => setDescription(event.target.value)}/></label>
+        disabled={!ready || saving} value={description} onChange={(event) => setDescription(event.target.value)}/></label>
       <fieldset>
         <legend>Liens marchands</legend>
         <p className="hint">Colle un lien produit pour importer son image, son nom et sa description quand la boutique les fournit.</p>
@@ -194,7 +196,7 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
           </div>;
         })}
         {links.length < 20 && <div className="stack tight">
-          <label>Lien vers un produit<input id="gift-product-link" type="url" value={url} disabled={loading || saving} placeholder="https://…"
+          <label>Lien vers un produit<input id="gift-product-link" type="url" value={url} disabled={!ready || loading || saving} placeholder="https://…"
             onChange={(event) => setUrl(event.target.value)}
             onPaste={(event) => {
               const pasted = (event.clipboardData.getData("text/plain") || event.clipboardData.getData("text")).trim();
@@ -205,14 +207,14 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
               }
             }}
             onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void append(url); } }}/></label>
-          <button type="button" className="button outline" onClick={() => void append(url)} disabled={loading || saving}>{loading ? "Import en cours…" : "Ajouter le lien"}</button>
+          <button type="button" className="button outline" onClick={() => void append(url)} disabled={!ready || loading || saving}>{loading ? "Import en cours…" : "Ajouter le lien"}</button>
           {url.trim() && !loading && <button type="button" className="text-button" onClick={() => { setUrl(""); setNotice(""); }}>Effacer le lien saisi</button>}
         </div>}
         {notice && <p role="status" className="hint">{notice}</p>}
       </fieldset>
       <input type="hidden" name="links" value={JSON.stringify(links)}/>
       <Feedback result={result}/>
-      {loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
+      {!ready || loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
     </form>}
   </div>;
 }

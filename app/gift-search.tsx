@@ -61,7 +61,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>
             </svg>
-            <input type="search" autoComplete="off" value={query} minLength={2} maxLength={100}
+            <input type="search" autoComplete="off" value={query} disabled={disabled} minLength={2} maxLength={100}
               placeholder="Skyjo, bonnet, IKEA…" onChange={(event) => {
                 request.current?.abort();
                 request.current = null;

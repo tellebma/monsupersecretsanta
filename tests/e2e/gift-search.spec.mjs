@@ -91,6 +91,7 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
   await expect(page).toHaveURL(/\/mes-cadeaux\/nouveau#gift-product-link$/);
 
   const url = "https://example.org/cadeau-" + randomUUID().slice(0, 8);
+  await expect(page.getByLabel("Lien vers un produit")).toBeEditable();
   await page.getByLabel("Lien vers un produit").evaluate((input, pastedUrl) => {
     const clipboardData = new DataTransfer();
     clipboardData.setData("text/plain", pastedUrl);
