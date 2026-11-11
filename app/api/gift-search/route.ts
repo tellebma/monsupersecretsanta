@@ -24,22 +24,20 @@ export async function GET(request: Request) {
 
   const { data: gifts, error } = await db.rpc("santa_my_gifts");
   const local = findCatalogProducts(query, Array.isArray(gifts) ? gifts as Gift[] : []);
+  const merchantProducts = await merchantSearch(query).catch(() => null);
+  const products = uniqueCatalogProducts([...(merchantProducts ?? []), ...local], 24);
+  const status = merchantProducts === null || (error && !products.length) ? "unavailable" : "ok";
   const key = process.env.BRAVE_SEARCH_API_KEY;
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return reply(local, error && !local.length ? "unavailable" : "ok");
+  if (products.length >= 8 || process.env.BRAVE_SEARCH_ENABLED !== "true" || !key || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return reply(products, status);
   }
 
   try {
     const { data: permitted } = await workerClient().rpc("santa_take_catalog_search_budget", { p_account: accountId });
-    if (permitted !== true) return reply(local, "limited");
-    const merchantProducts = await merchantSearch(query);
-    let products = uniqueCatalogProducts([...merchantProducts, ...local], 24);
-    if (products.length < 8 && process.env.BRAVE_SEARCH_ENABLED === "true" && key) {
-      const external = await searchBraveCatalog(query, key, request.signal).catch(() => []);
-      products = uniqueCatalogProducts([...products, ...external], 24);
-    }
-    return reply(products, products.length || !error ? "ok" : "unavailable");
+    if (permitted !== true) return reply(products, "limited");
+    const external = await searchBraveCatalog(query, key, request.signal);
+    return reply(uniqueCatalogProducts([...products, ...external], 24), "ok");
   } catch {
-    return reply(local, "unavailable");
+    return reply(products, status);
   }
 }
