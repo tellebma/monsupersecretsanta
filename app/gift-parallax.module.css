@@ -5,14 +5,14 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .backGift {
-    transform: translateY(calc(var(--gift-parallax, 0) * 12px));
+    transform: translate(calc(var(--gift-pointer-x, 0) * 10px), calc(var(--gift-parallax, 0) * 12px + var(--gift-pointer-y, 0) * 10px));
   }
 
   .frontGift {
-    transform: translateY(calc(var(--gift-parallax, 0) * -24px));
+    transform: translate(calc(var(--gift-pointer-x, 0) * -18px), calc(var(--gift-parallax, 0) * -24px + var(--gift-pointer-y, 0) * -18px));
   }
 
   .sparkles {
-    transform: translateY(calc(var(--gift-parallax, 0) * -14px));
+    transform: translate(calc(var(--gift-pointer-x, 0) * 6px), calc(var(--gift-parallax, 0) * -14px + var(--gift-pointer-y, 0) * 6px));
   }
 }

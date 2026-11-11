@@ -112,10 +112,20 @@ test("propose un lien après une recherche vide et conserve l’URL d’un impor
     await db.end();
   }
   const name = "Idée avec lien QA " + randomUUID().slice(0, 8);
+  const recoveredImage = "https://example.com/recovered-image-qa.svg";
+  await page.route((requestUrl) => requestUrl.pathname === "/api/gift-image" && requestUrl.searchParams.get("url") === url,
+    (route) => route.fulfill({ json: { image: recoveredImage } }));
+  await page.route(recoveredImage, (route) => route.fulfill({
+    contentType: "image/svg+xml",
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="green"/></svg>',
+  }));
   await page.getByRole("textbox", { name: "Nom du cadeau" }).fill(name);
   await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue("");
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
   const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name }) });
+  await card.scrollIntoViewIfNeeded();
+  await expect(card.locator(".gift-cover img")).toHaveAttribute("src", recoveredImage);
+  await expect(card.locator(".gift-cover img")).toHaveCSS("opacity", "1");
   await expect(card.getByRole("link", { name: /Voir le produit/ })).toHaveAttribute("href", url);
 });
 
@@ -132,7 +142,9 @@ test("enregistre un cadeau manuel avec le nom seul", async ({ page }) => {
 test("le catalogue renvoie des fiches marchandes uniquement aux comptes connectés", async ({ page }) => {
   const path = "/api/gift-search?q=skyjo";
   expect((await page.request.get(path)).status()).toBe(401);
+  expect((await page.request.get("/api/gift-image?url=https://example.com/cadeau")).status()).toBe(401);
   await openGiftSearch(page);
+  expect((await page.request.get("/api/gift-image?url=https://127.0.0.1/")).status()).toBe(400);
   await page.getByRole("button", { name: /Choisir STRIMMIG/ }).click();
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(/STRIMMIG/);
   await page.getByRole("searchbox", { name: "Nom du produit" }).fill("skyjo");

@@ -15,7 +15,7 @@ Une application web française, utilisable sur mobile, pour organiser ses tirage
 | P0 | Retrait d’un participant par l’organisateur avant le tirage |
 | P0 | Recherche de cadeaux, import par lien, compteur d’échecs et saisie avec le nom seul |
 | P1 | Écran « Chercher un cadeau » avec suggestions dès l’ouverture et préremplissage après sélection |
-| P1 | Parallaxe des cadeaux sur l’accueil, avec prise en charge du mouvement réduit |
+| P1 | Parallaxe des cadeaux à la souris et au défilement sur l’accueil, avec prise en charge du mouvement réduit |
 | P1 | Rapport SQL des imports incomplets par marchand |
 | P1 | Recherche de produits sur Fnac et Boulanger avec plusieurs résultats et images |
 | P1 | Navigation active, accès clavier au contenu et pages de chargement, d’erreur et introuvable en français |
