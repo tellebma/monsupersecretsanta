@@ -23,7 +23,7 @@ export default async function GroupsPage() {
       {editions.map((edition) => <article className="panel stack" key={edition.id}>
         <div className="inline spread"><span className="pill">{states[edition.state]}</span><span className="hint">{edition.year}</span></div>
         <div><h2>{edition.name}</h2><p>Échange le {dateLabel(edition.exchange_at)}</p></div>
-        <Link className="button outline" href={`/groupes/${edition.id}`}>Ouvrir le groupe</Link>
+        <Link className="button outline" href={`/groupes/${edition.id}`}>Ouvrir le groupe<span className="sr-only"> · {edition.name}, édition {edition.year}</span></Link>
       </article>)}
     </div>
   </div>;

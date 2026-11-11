@@ -6,6 +6,7 @@ import { emailAccount, fetchProduct, login, social, type Result } from "./action
 import { safeLink, safeProductImage } from "@/lib/format";
 import type { Edition, Gift, Link } from "@/lib/types";
 import { GiftSearch } from "./gift-search";
+import { ProductImage } from "./product-image";
 import giftStyles from "./gift-search.module.css";
 
 type Action = (state: Result, data: FormData) => Promise<Result>;
@@ -187,7 +188,7 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
         {links.map((link) => {
           const image = safeProductImage(link.image);
           return <div className="inline list-row" key={link.url}>
-            {image && <img className={giftStyles.thumbnail} src={image.href} alt="" width={48} height={48} loading="lazy" referrerPolicy="no-referrer"/>}
+            <ProductImage src={image?.href} className={giftStyles.thumbnail}/>
             <span className={`break ${giftStyles.linkName}`}>{link.name || safeLink(link.url)?.hostname || link.url}</span>
             <button className="text-button" type="button" onClick={() => setLinks((current) => current.filter((item) => item.url !== link.url))}>Retirer</button>
           </div>;

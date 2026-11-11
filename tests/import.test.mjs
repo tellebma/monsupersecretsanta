@@ -26,6 +26,13 @@ test("handles a product without pricing and refuses generic pages and unsafe ima
   assert.equal(product.image, undefined);
 });
 
+test("uses another merchant image when the first one is empty or unsafe", () => {
+  const html = '<script type="application/ld+json">{"@type":"Product","name":"Carnet","image":["data:image/gif;base64,placeholder",{"contentUrl":"/photo.jpg"}]}</script>';
+  assert.equal(productFromHtml(html, new URL(productUrl)).image, "https://www.fnac.com/photo.jpg");
+  const amazon = '<span id="productTitle">Livre</span><meta property="og:image" content=""><img id="landingImage" src="data:image/gif;base64,placeholder" data-old-hires="https://images.boutique.fr/livre.jpg">';
+  assert.equal(productFromHtml(amazon, new URL("https://www.amazon.fr/dp/TEST")).image, "https://images.boutique.fr/livre.jpg");
+});
+
 test("imports other public merchant domains and revalidates redirect destinations", async () => {
   const visited = [];
   const readPage = async (url) => {

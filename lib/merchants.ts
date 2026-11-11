@@ -64,14 +64,22 @@ export function productFromHtml(html: string | Buffer, url: URL, merchantCanonic
     if (!canonical) return null;
     productUrl = canonical.href;
   }
-  const imageSource = [product?.image].flat()[0];
-  const rawImage = text(record(imageSource)?.url ?? record(imageSource)?.contentUrl ?? imageSource ??
-    meta("og:image") ?? $("#landingImage").attr("src"), 2048);
+  const landingImage = $("#landingImage, #imgBlkFront, img[itemprop='image']").first();
+  const imageCandidates = [
+    ...[product?.image].flat().map((source) => record(source)?.url ?? record(source)?.contentUrl ?? source),
+    meta("og:image:secure_url"), meta("og:image"), meta("twitter:image"),
+    landingImage.attr("data-old-hires"), landingImage.attr("data-src"),
+    landingImage.attr("data-lazyimage"), landingImage.attr("src"),
+    $('link[rel="image_src"]').attr("href"),
+  ];
   let image: string | undefined;
-  if (rawImage) {
+  for (const candidate of imageCandidates) {
+    const rawImage = text(candidate, 2048);
+    if (!rawImage) continue;
     try {
       image = publicMerchantUrl(new URL(rawImage, url).href)?.href;
-    } catch { /* The rest of the product is usable. */ }
+      if (image) break;
+    } catch { /* Try the next image supplied by the merchant. */ }
   }
   return {
     url: productUrl,
