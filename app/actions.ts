@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { appOrigin, nextPath, parisInstant, safeLink, safeProductImage } from "@/lib/format";
 import { configured, requireSession, session, socialProviderStatus, workerClient } from "@/lib/supabase";
-import { importProduct } from "@/lib/merchants";
+import { cachedProductMetadata } from "@/lib/product-metadata";
 import { importFailureKey } from "@/lib/merchant-http";
 import type { Link } from "@/lib/types";
 
@@ -201,7 +201,7 @@ export async function fetchProduct(value: string): Promise<Link | null> {
   await requireSession();
   const key = importFailureKey(value);
   if (!key) return null;
-  const product = await importProduct(value).catch(() => null);
+  const product = await cachedProductMetadata(value).catch(() => null);
   if ((!product?.name || !product.description || !product.image) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const { error } = await workerClient().rpc("santa_record_import_failure", { p_url: key.url, p_merchant: key.merchant })
       .abortSignal(AbortSignal.timeout(1500));
@@ -209,6 +209,7 @@ export async function fetchProduct(value: string): Promise<Link | null> {
   }
   return product;
 }
+
 
 export async function giftClaim(edition: string, gift: string, _: Result, data: FormData): Promise<Result> {
   const db = await requireSession();
