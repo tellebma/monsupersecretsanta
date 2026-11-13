@@ -29,7 +29,7 @@ export type Edition = {
   owner: boolean;
   can_reveal?: boolean;
   recipient?: string;
-  members?: { id: string; name: string; email: string; selected: boolean }[];
+  members?: { id: string; name: string; email: string; selected: boolean; gift_count: number }[];
   pending?: string[];
   exceptions?: [string, string][];
 };
