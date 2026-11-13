@@ -14,7 +14,7 @@ async function imageExists(url: string) {
 
 function legoReference(url: URL) {
   if (/^(?:www\.)?lego\.com$/i.test(url.hostname)) {
-    return /^\/fr-fr\/product\/[a-z0-9-]+-(\d{4,7})\/?$/i.exec(url.pathname)?.[1];
+    return /^\/[a-z]{2}-[a-z]{2}\/product\/(?:[a-z0-9-]+-)?(\d{4,7})\/?$/i.exec(url.pathname)?.[1];
   }
   if (/^(?:www\.)?idealo\.fr$/i.test(url.hostname)) {
     return /^\/prix\/\d+\/lego-[a-z0-9-]+-(\d{4,7})\.html$/i.exec(url.pathname)?.[1];
@@ -27,18 +27,31 @@ export async function importProductMetadata(value: string, {
   checkImage = imageExists,
 } = {}) {
   const product = await importer(value).catch(() => null);
-  if (safeProductImage(product?.image)) return product;
   const url = safeLink(value);
   if (!url) return product;
   const setNumber = legoReference(url);
   if (!setNumber) return product;
+  if (product?.name && product.description && safeProductImage(product.image)) return product;
   const officialImage = `https://www.lego.com/cdn/product-assets/product.img.pri/${setNumber}_Prod.png`;
-  if (await checkImage(officialImage)) return product ? { ...product, image: officialImage } : { url: url.href, image: officialImage };
-  const candidates = await search(`LEGO ${setNumber}`).catch(() => []);
+  const [hasOfficialImage, candidates] = await Promise.all([
+    safeProductImage(product?.image) ? false : checkImage(officialImage).catch(() => false),
+    product?.name && product.description ? [] : search(`LEGO ${setNumber}`).catch(() => []),
+  ]);
   const matching = candidates.find((item) => /\blego\b/i.test(item.name) && new RegExp(`\\b${setNumber}\\b`).test(item.name));
-  const image = safeProductImage(matching?.image)?.href;
-  if (!matching || !image) return product;
-  return product ? { ...product, image } : { url: url.href, name: matching.name, image };
+  const details = matching && !product?.description ? await importer(matching.url).catch(() => null) : null;
+  // Retailer prices and stock do not describe the original LEGO/idealo offer.
+  const image = safeProductImage(product?.image)?.href ?? (hasOfficialImage ? officialImage : undefined) ??
+    safeProductImage(matching?.image)?.href;
+  const slug = url.pathname.split("/").filter(Boolean).pop()!
+    .replace(/\.html$/i, "").replace(new RegExp(`(?:^|-)${setNumber}$`), "").replace(/-/g, " ");
+  const fallbackName = `LEGO ${slug.replace(/^lego\s+/i, "")} ${setNumber}`.replace(/\s+/g, " ").trim().slice(0, 200);
+  return {
+    ...product,
+    url: product?.url ?? url.href,
+    name: product?.name || matching?.name || fallbackName,
+    description: product?.description || details?.description,
+    image,
+  };
 }
 
-export const cachedProductMetadata = unstable_cache((url: string) => importProductMetadata(url), ["gift-product-metadata-v2"], { revalidate: 900 });
+export const cachedProductMetadata = unstable_cache((url: string) => importProductMetadata(url), ["gift-product-metadata-v3"], { revalidate: 900 });
