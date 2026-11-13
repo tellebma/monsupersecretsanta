@@ -21,9 +21,36 @@ async function openGiftSearch(page) {
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveCount(0);
   const suggestions = page.getByRole("region", { name: "Catalogue de cadeaux" }).getByRole("listitem");
   await expect(suggestions).toHaveCount(6);
+  await suggestions.first().scrollIntoViewIfNeeded();
   await expect(suggestions.first()).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
+
+test("explore une thématique, affine la recherche et revient à toutes les idées", async ({ page }) => {
+  await page.route("**/api/gift-search?*", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    if (params.has("theme")) {
+      expect(params.get("theme")).toBe("jeux");
+      return route.fulfill({ json: { status: "ok", products: [{ name: "Jeu de société test", url: "https://www.fnac.com/jeu/a123/w-4" }],
+        source: { label: "Meilleures ventes Fnac", url: "https://www.fnac.com/l163007/Meilleures-ventes-jeux-de-societe/Jeux-de-societe" } } });
+    }
+    expect(params.get("q")).toBe("Jeux coopératifs");
+    return route.fulfill({ json: { status: "ok", products: [] } });
+  });
+  await openGiftSearch(page);
+  const themes = page.getByRole("group", { name: "Thématiques de cadeaux", exact: true });
+  await expect(themes.getByRole("button")).toHaveCount(18);
+  await themes.getByRole("button", { name: "Jeux de société", exact: true }).click();
+  await expect(themes.getByRole("button", { name: "Jeux de société", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: /Meilleures ventes Fnac/ })).toBeVisible();
+  await page.getByRole("button", { name: "Jeux coopératifs" }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("Jeux coopératifs");
+  await expect(page.getByRole("status").filter({ hasText: "Aucun produit trouvé." })).toBeVisible();
+  await themes.getByRole("button", { name: "Jeux de société", exact: true }).click();
+  await page.getByRole("button", { name: "Toutes les idées" }).click();
+  await expect(page.getByRole("heading", { name: "Idées cadeaux à découvrir" })).toBeVisible();
+  await expect(page.getByRole("searchbox")).toHaveValue("");
+});
 
 test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async ({ page }) => {
   const product = {

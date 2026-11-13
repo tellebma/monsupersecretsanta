@@ -1,6 +1,31 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { productsFromSearchHtml, searchMerchantCatalog } from "../lib/merchant-search.ts";
+import { productsFromSearchHtml, searchMerchantCatalog, searchThemeCatalog } from "../lib/merchant-search.ts";
+import { giftTheme, giftThemes } from "../lib/gift-themes.ts";
+
+test("thematic discovery uses live bestseller pages and falls back without claiming a ranking", async () => {
+  const html = Buffer.from('<article class="Article-itemGroup"><a href="/jeu/a123/w-4">Jeu</a><img class="Article-itemVisualImg" alt="Jeu du moment"></article>');
+  for (const id of ["jeux", "livres"]) {
+    const theme = giftTheme(id);
+    const selection = await searchThemeCatalog(theme, async (url) => {
+      assert.equal(url.href, theme.bestSellers);
+      return { html };
+    });
+    assert.equal(selection.products[0].name, "Jeu du moment");
+    assert.equal(selection.source.url, theme.bestSellers);
+  }
+  const queries = [];
+  const fallback = await searchThemeCatalog(giftTheme("jeux"), async (url) => {
+    if (url.pathname.startsWith("/l163007")) return { html: Buffer.from("Page sans produits") };
+    queries.push(url.searchParams.get("Search") ?? url.searchParams.get("tr"));
+    return { html };
+  });
+  assert.equal(fallback.source, undefined);
+  assert.deepEqual(queries, ["jeux de société", "jeux de société"]);
+  assert.equal(fallback.products.length, 1);
+  assert.equal(giftTheme("inconnu"), undefined);
+  assert.equal(new Set(giftThemes.map(({ id }) => id)).size, giftThemes.length);
+});
 
 test("reads multiple merchant results with real images and rejects unrelated links", () => {
   const html = Buffer.from(`<script type="application/ld+json">${JSON.stringify({
