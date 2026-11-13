@@ -45,6 +45,12 @@ Lancez `npm ci`, puis `npm run dev`. L’accueil est disponible sur [localhost:3
 3. Importez le dépôt dans Vercel et renseignez les variables de `.env.example`. `APP_ORIGIN` doit être l’origine publique du site, sans chemin. Ajoutez une clé Resend et une adresse d’expédition sur un domaine validé. Générez un secret aléatoire distinct pour `SCHEDULE_SECRET`. Le mot de passe PostgreSQL sert uniquement à administrer la base.
 4. Dans Supabase Vault, créez `santa_app_origin` et `santa_schedule_secret` avec les mêmes valeurs qu’en production, puis exécutez [le script de planification](supabase/schedule.sql). Le planificateur appelle le site toutes les minutes. Après avoir raccordé le domaine final, mettez à jour l’origine dans Vercel, Supabase Auth et Vault.
 
+## Statistiques de fréquentation
+
+Vercel Web Analytics est intégré au layout et chargé uniquement sur les déploiements de production (`VERCEL_ENV=production`). Le tableau Analytics du projet Vercel affiche les visiteurs, les pages vues et les sources de trafic. Activez Web Analytics dans Vercel avant de déployer cette intégration. Les données commencent à être collectées après ce déploiement et ne sont pas rétroactives.
+
+Le filtre `lib/analytics.ts` supprime tous les paramètres et fragments des URL, remplace les jetons d’invitation et les identifiants de groupes et de cadeaux par des catégories de pages, et ignore les routes inconnues et les callbacks d’authentification. Aucun événement personnalisé contenant les noms, les adresses mail, les recherches ou les cadeaux n’est envoyé. La préproduction et le développement local ne chargent pas le composant de collecte.
+
 ## Vérifier et importer
 
 `npm test` couvre le tirage, les invitations, la confidentialité, les règles de réservation et l’import des produits. `npm run build` vérifie le typage et la compilation de production.
