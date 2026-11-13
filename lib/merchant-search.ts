@@ -1,6 +1,7 @@
 import { loadBuffer } from "cheerio";
 import { publicMerchantUrl, readMerchantPage } from "./merchant-http";
 import { uniqueCatalogProducts, type CatalogProduct } from "./gift-catalog";
+import type { GiftTheme } from "./gift-themes";
 
 function productLink(value: unknown, origin: URL) {
   if (typeof value !== "string") return null;
@@ -77,4 +78,18 @@ export async function searchMerchantCatalog(query: string, readPage = readMercha
   }));
   if (results.every((result) => result.status === "rejected")) throw new Error("Recherche marchande indisponible.");
   return uniqueCatalogProducts(results.flatMap((result) => result.status === "fulfilled" ? result.value : []), 24);
+}
+
+export async function searchThemeCatalog(theme: GiftTheme, readPage = readMerchantPage) {
+  if (theme.bestSellers) {
+    try {
+      const url = new URL(theme.bestSellers);
+      const page = await readPage(url, AbortSignal.timeout(6500));
+      const products = page && "html" in page ? productsFromSearchHtml(page.html, url) : [];
+      if (products.length) return { products, source: { label: "Meilleures ventes Fnac", url: url.href } };
+    } catch {
+      // A blocked or changed bestseller page falls back to ordinary product discovery.
+    }
+  }
+  return { products: await searchMerchantCatalog(theme.query, readPage) };
 }

@@ -1,1 +1,36 @@
-<p>Ton code Mon Super Secret Santa est <strong>{{ .Token }}</strong>.</p>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Ton code Mon Super Secret Santa</title>
+  <style>@media only screen and (max-width: 600px) { .email-shell { width: 100% !important; } .email-content { padding: 30px 24px !important; } .email-title { font-size: 32px !important; } .email-button { display: block !important; text-align: center !important; } }</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#fbf7ee;color:#203c32;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+  <div style="display:none;font-size:1px;color:#fbf7ee;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Saisis ce code sur la page de connexion pour vérifier ton adresse mail et poursuivre la création de ton compte ou la réinitialisation de ton mot de passe.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fbf7ee">
+    <tr><td align="center" style="padding:32px 12px;">
+      <!--[if mso]><table role="presentation" width="580" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
+      <table role="presentation" class="email-shell" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:580px;">
+        <tr><td style="padding:0 12px 24px;text-align:center;color:#203c32;font-size:14px;line-height:22px;">Mon Super<br><strong style="font-size:20px;">Secret Santa</strong></td></tr>
+        <tr><td style="background-color:#fffdf7;border:1px solid #dfd9c9;border-top:5px solid #1c513e;border-radius:16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <tr><td class="email-content" style="padding:40px 40px 36px;">
+              <p style="margin:0 0 18px;color:#a13c3f;font-size:11px;font-weight:bold;letter-spacing:2px;line-height:18px;">UN PETIT CODE, ET C’EST PARTI</p>
+              <h1 class="email-title" style="margin:0 0 22px;color:#203c32;font-family:Georgia,'Times New Roman',serif;font-size:38px;font-weight:normal;line-height:1.15;overflow-wrap:anywhere;">Bienvenue dans le secret</h1>
+              <p style="margin:0 0 28px;color:#53665d;font-size:16px;line-height:27px;overflow-wrap:anywhere;">Saisis ce code sur la page de connexion pour vérifier ton adresse mail et poursuivre la création de ton compte ou la réinitialisation de ton mot de passe.</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding:22px 12px;background-color:#e8efe3;border:1px solid #ceddce;border-radius:10px;"><p style="margin:0 0 8px;color:#53665d;font-size:12px;line-height:18px;">TON CODE DE VÉRIFICATION</p><p style="margin:0;color:#1c513e;font-family:'Courier New',monospace;font-size:32px;font-weight:bold;letter-spacing:5px;line-height:42px;overflow-wrap:anywhere;">{{ .Token }}</p></td></tr></table>
+
+              <p style="margin:26px 0 0;padding-top:22px;border-top:1px solid #dfd9c9;color:#53665d;font-size:13px;line-height:21px;">Ne partage ce code avec personne. Si tu n’as pas demandé ce code, tu peux ignorer ce mail.</p>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:24px 16px 0;text-align:center;color:#53665d;font-size:12px;line-height:20px;">Mon Super Secret Santa<br>Les petites attentions font les grandes surprises.</td></tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+  </table>
+</body>
+</html>

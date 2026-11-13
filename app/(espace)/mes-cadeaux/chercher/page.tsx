@@ -12,7 +12,7 @@ export default function SearchGiftsPage() {
     <div>
       <p className="eyebrow"><span/> CATALOGUE DE CADEAUX</p>
       <h1 className="page-title">Chercher un cadeau</h1>
-      <p>Recherche un produit ou choisis une idée pour préparer ta fiche cadeau.</p>
+      <p>Jeux, livres, déco, sorties… Explore les thématiques ou recherche un produit pour préparer ta fiche cadeau.</p>
     </div>
     <GiftForm action={saveGift.bind(null, null)} suggestions={catalogSuggestions()}/>
   </section>;
