@@ -46,6 +46,7 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
     </section>}
     {edition.recipient && <section className="stack">
       <div className="panel reveal"><p className="eyebrow"><span/> TON DESTINATAIRE</p><h2>Tu offres un cadeau à {edition.recipient}</h2>
+        <p>{gifts.length} {gifts.length === 1 ? "souhait" : "souhaits"} dans sa liste.</p>
         <p>{closed ? "L’échange est terminé." : "Réserve une idée de sa liste, puis marque-la comme achetée."}</p></div>
       {gifts.length === 0 && <p className="panel">Sa liste est encore vide. Elle peut être complétée après le tirage.</p>}
       <div className="card-grid">{gifts.map((gift) => <GiftCard gift={gift} edition={id} closed={closed} key={gift.id}/>)}</div>
@@ -65,7 +66,13 @@ function Organization({ edition }: { edition: Edition }) {
       {edition.state === "drawn" && <Link className="button outline" href={`/groupes/nouveau?groupe=${edition.group_id}`}>Créer la prochaine édition</Link>}
     </div>
     {edition.state === "blocked" && <p className="feedback error">Le tirage n’a pas pu être réalisé. Vérifie la liste, les exceptions et les trois années précédentes, puis programme une nouvelle date.</p>}
-    {edition.state === "drawn" ? <p className="panel">Ce tirage est définitif. Chaque participant peut ouvrir son propre résultat.</p> :
+    {edition.state === "drawn" ? <div className="panel stack">
+      <p>Ce tirage est définitif. Chaque participant peut ouvrir son propre résultat.</p>
+      <h3>Listes de souhaits</h3>
+      <ul className="pending">{members.filter((member) => member.selected).map((member) => <li key={member.id}>
+        {member.name} · {member.gift_count} {member.gift_count === 1 ? "souhait" : "souhaits"}
+      </li>)}</ul>
+    </div> :
       <div className="editor-grid">
         <ActionForm action={configureEdition.bind(null, id)} className="panel stack">
           <h3>Préparer le tirage</h3>
@@ -73,7 +80,7 @@ function Organization({ edition }: { edition: Edition }) {
           <fieldset><legend>Participants retenus</legend>
             {members.length ? members.map((member) => <label className="check-row" key={member.id}>
               <input type="checkbox" name="member" value={member.id} defaultChecked={member.selected}/>
-              <span className="break">{member.name}<small>{member.email}</small></span>
+              <span className="break">{member.name}<small>{member.email}</small><small>{member.gift_count} {member.gift_count === 1 ? "souhait" : "souhaits"}</small></span>
             </label>) : <p className="hint">Les invités apparaissent ici après avoir rejoint le groupe.</p>}
           </fieldset>
           <ExceptionFields key={members.map(({ id }) => id).join(":")} members={members} initial={edition.exceptions}/>

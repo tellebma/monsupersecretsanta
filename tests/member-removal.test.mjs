@@ -17,7 +17,7 @@ test("member removal revokes access, respects draw state and invalidates old wor
       create function auth.uid() returns uuid language sql stable as
         $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     `);
-    for (const file of ["202611090001_initial.sql", "202611100003_remove_members.sql"]) {
+    for (const file of ["202611090001_initial.sql", "202611100003_remove_members.sql", "202611130001_wishlist_counts.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
     for (const [id, email] of addresses) await db.query("insert into auth.users(id,email) values($1,$2)", [id, email]);
@@ -48,7 +48,19 @@ test("member removal revokes access, respects draw state and invalidates old wor
       assert.equal((await call("join", tokens.get(addresses.get(id)), addresses.get(id), null)).status, "joined");
     }
 
+    await asUser();
+    await db.query(`insert into santa.gifts(owner_id,name,description,archived) values
+      ($1,'Livre','Un livre',false),
+      ($1,'Ancien souhait','Archivé',true),
+      ($2,'Jeu','Un jeu',false),
+      ($2,'Puzzle','Un puzzle',false)`, [host, lea]);
+    await asUser(host);
+    const withCounts = await call("edition", edition);
+    assert.deepEqual(Object.fromEntries(withCounts.members.map(({ id, gift_count }) => [id, gift_count])),
+      { [host]: 1, [alex]: 0, [lea]: 2, [sam]: 0 });
+
     await asUser(lea);
+    assert.equal((await call("edition", edition)).members, undefined);
     await assert.rejects(call("remove_member", edition, alex), /Groupe inaccessible/);
     await asUser(host);
     await call("configure", edition, draw, exchange, null, [host, alex, lea, sam], JSON.stringify([[alex, lea], [host, sam]]), false);
