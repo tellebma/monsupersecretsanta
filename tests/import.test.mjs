@@ -6,6 +6,20 @@ import { nextPath, safeLink } from "../lib/format.ts";
 
 const productUrl = "https://www.fnac.com/produit";
 
+test("imports a show as an event instead of its nested ticket category", () => {
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    "@type": "ComedyEvent", name: "Une comédie", description: "Un spectacle à Lyon",
+    image: "/spectacle.jpg", offers: [{ "@type": "AggregateOffer", lowPrice: "20.00", priceCurrency: "EUR",
+      itemOffered: { "@type": "Product", name: "Catégorie unique - Assis" } }],
+  })}</script>`;
+  const result = productFromHtml(html, new URL("https://www.fnacspectacles.com/event/spectacle/"));
+  assert.equal(result.name, "Une comédie");
+  assert.equal(result.description, "Un spectacle à Lyon");
+  assert.equal(result.price, 20);
+  assert.equal(result.currency, "EUR");
+  assert.equal(result.image, "https://www.fnacspectacles.com/spectacle.jpg");
+});
+
 test("reads product JSON-LD with localized prices, offer and relative image", () => {
   const html = `<script type="application/ld+json">{oops}</script>
   <script type="application/ld+json">{"@graph":[{"@type":["Thing","Product"],"name":"Carnet","image":{"url":"/photo.jpg"},"offers":[{"price":"14,90","priceCurrency":"EUR","availability":"https://schema.org/InStock"}]}]}</script>`;

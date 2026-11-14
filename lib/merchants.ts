@@ -20,7 +20,8 @@ function findProduct(value: unknown, depth = 0): RecordValue | undefined {
   const node = record(value);
   if (!node) return;
   const types = [node["@type"]].flat();
-  if (types.some((type) => typeof type === "string" && /(?:^|\/)Product$/.test(type))) return node;
+  // Prefer the event itself over its nested ticket category (also typed Product).
+  if (types.some((type) => typeof type === "string" && /(?:^|\/)(?:Product|\w*Event)$/.test(type))) return node;
   for (const child of Object.values(node)) {
     const product = findProduct(child, depth + 1);
     if (product) return product;
