@@ -99,9 +99,9 @@ test("crée un compte avec le code du mail, définit le mot de passe et se recon
   expect(code).toBeTruthy();
   await page.getByLabel("Code reçu par mail").fill(code);
   await page.getByRole("button", { name: "Vérifier le code" }).click();
-  await expect(page.getByLabel("Nouveau mot de passe")).toBeVisible();
-  await page.getByLabel("Nouveau mot de passe").fill(localPassword);
-  await page.getByLabel("Confirmer le mot de passe").fill(localPassword);
+  await expect(page.getByLabel("Nouveau mot de passe", { exact: true })).toBeVisible();
+  await page.getByLabel("Nouveau mot de passe", { exact: true }).fill(localPassword);
+  await page.getByLabel("Confirmer le mot de passe", { exact: true }).fill(localPassword);
   await page.getByRole("button", { name: "Enregistrer mon mot de passe" }).click();
   await expect(page).toHaveURL(/\/groupes$/);
   await page.getByRole("button", { name: "Déconnexion" }).click();
