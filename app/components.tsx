@@ -103,7 +103,7 @@ export function ExceptionFields({ members = [], initial = [] }: { members?: Edit
 }
 
 function hasProductDetails(product: Link) {
-  return Boolean(product.name && product.description && safeProductImage(product.image));
+  return Boolean(product.name && safeProductImage(product.image));
 }
 
 export function GiftForm({ action, gift, suggestions }: { action: Action; gift?: Gift; suggestions?: Link[] }) {
@@ -127,9 +127,9 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
       setNotice("Ce lien est déjà dans la liste.");
       return false;
     }
-    setLinks((current) => [...current, { ...link, url: parsed.href, image: safeProductImage(link.image)?.href }]);
+    const { description: _description, ...product } = link;
+    setLinks((current) => [...current, { ...product, url: parsed.href, image: safeProductImage(link.image)?.href }]);
     setName((current) => current || link.name || "");
-    setDescription((current) => current || link.description || "");
     setShowEditor(true);
     return true;
   }
@@ -155,7 +155,6 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
       const link = {
         url: parsed.href,
         name: knownProduct?.name || imported?.name,
-        description: knownProduct?.description || imported?.description,
         image: safeProductImage(knownProduct?.image)?.href || imported?.image,
         price: imported?.price ?? knownProduct?.price,
         currency: imported?.currency ?? knownProduct?.currency,
@@ -182,11 +181,11 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
     {showEditor && <form id="gift-editor" action={submit} className="panel stack" aria-label="Fiche cadeau">
       {startWithSearch && <h2>Ta fiche cadeau</h2>}
       <label>Nom du cadeau<input name="name" maxLength={200} required disabled={!ready || saving} value={name} onChange={(event) => setName(event.target.value)}/></label>
-      <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Facultative"
+      <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Tes précisions, tailles, couleurs… (facultatif)"
         disabled={!ready || saving} value={description} onChange={(event) => setDescription(event.target.value)}/></label>
       <fieldset>
         <legend>Liens marchands</legend>
-        <p className="hint">Colle un lien produit pour importer son image, son nom et sa description quand la boutique les fournit.</p>
+        <p className="hint">Colle un lien produit pour importer son image et son nom quand la boutique les fournit. La description est à rédiger par tes soins.</p>
         {links.map((link) => {
           const image = safeProductImage(link.image);
           return <div className="inline list-row" key={link.url}>

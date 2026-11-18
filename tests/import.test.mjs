@@ -14,7 +14,7 @@ test("imports a show as an event instead of its nested ticket category", () => {
   })}</script>`;
   const result = productFromHtml(html, new URL("https://www.fnacspectacles.com/event/spectacle/"));
   assert.equal(result.name, "Une comédie");
-  assert.equal(result.description, "Un spectacle à Lyon");
+  assert.equal(result.description, undefined);
   assert.equal(result.price, 20);
   assert.equal(result.currency, "EUR");
   assert.equal(result.image, "https://www.fnacspectacles.com/spectacle.jpg");

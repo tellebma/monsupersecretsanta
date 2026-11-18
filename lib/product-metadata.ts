@@ -26,19 +26,20 @@ export async function importProductMetadata(value: string, {
   search = searchMerchantCatalog,
   checkImage = imageExists,
 } = {}) {
-  const product = await importer(value).catch(() => null);
+  const imported = await importer(value).catch(() => null);
+  // Ignore descriptions even when an alternative importer supplies one.
+  const product = imported ? (({ description: _description, ...details }) => details)(imported) : null;
   const url = safeLink(value);
   if (!url) return product;
   const setNumber = legoReference(url);
   if (!setNumber) return product;
-  if (product?.name && product.description && safeProductImage(product.image)) return product;
+  if (product?.name && safeProductImage(product.image)) return product;
   const officialImage = `https://www.lego.com/cdn/product-assets/product.img.pri/${setNumber}_Prod.png`;
   const [hasOfficialImage, candidates] = await Promise.all([
     safeProductImage(product?.image) ? false : checkImage(officialImage).catch(() => false),
-    product?.name && product.description ? [] : search(`LEGO ${setNumber}`).catch(() => []),
+    search(`LEGO ${setNumber}`).catch(() => []),
   ]);
   const matching = candidates.find((item) => /\blego\b/i.test(item.name) && new RegExp(`\\b${setNumber}\\b`).test(item.name));
-  const details = matching && !product?.description ? await importer(matching.url).catch(() => null) : null;
   // Retailer prices and stock do not describe the original LEGO/idealo offer.
   const image = safeProductImage(product?.image)?.href ?? (hasOfficialImage ? officialImage : undefined) ??
     safeProductImage(matching?.image)?.href;
@@ -49,9 +50,8 @@ export async function importProductMetadata(value: string, {
     ...product,
     url: product?.url ?? url.href,
     name: product?.name || matching?.name || fallbackName,
-    description: product?.description || details?.description,
     image,
   };
 }
 
-export const cachedProductMetadata = unstable_cache((url: string) => importProductMetadata(url), ["gift-product-metadata-v3"], { revalidate: 900 });
+export const cachedProductMetadata = unstable_cache((url: string) => importProductMetadata(url), ["gift-product-metadata-v4-manual-description"], { revalidate: 900 });
