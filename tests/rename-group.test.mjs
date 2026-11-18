@@ -12,7 +12,7 @@ test("only the owner can rename a group across editions and pending notification
       create schema auth; create table auth.users(id uuid primary key, email text);
       create function auth.uid() returns uuid language sql stable as
         $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;`);
-    for (const file of ["202611090001_initial.sql", "20261118195815_rename_groups.sql"]) {
+    for (const file of ["202611090001_initial.sql", "20261118200130_rename_groups.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
     for (const id of [owner, participant]) await db.query("insert into auth.users values($1,$2)", [id, `${id}@example.com`]);
