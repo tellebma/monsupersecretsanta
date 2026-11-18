@@ -14,9 +14,9 @@ Les sujets sont classés dans l’ordre de traitement. Un sujet bloqué porte sa
 
 ## Livré
 
-### Interface harmonisée — P1, en validation
+### Interface harmonisée — P1, PR 19
 
-Navigation, titres et actions uniformisés ; organisation des groupes guidée par étapes ; réglages secondaires repliables ; confirmation avant le retrait d’un cadeau ; affichage du mot de passe et ajout de cadeaux simplifié. Validation : TypeScript, build et 35 tests unitaires/SQL réussis. Tests de parcours et publication en cours sur `codex/unify-app-ux`.
+Navigation, titres et actions uniformisés ; organisation des groupes guidée par étapes ; réglages secondaires repliables ; confirmation avant le retrait d’un cadeau ; affichage du mot de passe et ajout de cadeaux simplifié. Validation : TypeScript, build et 35 tests unitaires/SQL réussis ; parcours Chromium vérifiés, contrôles d’accessibilité et d’absence de débordement sur ordinateur et mobile réussis. [PR 19](https://github.com/tellebma/monsupersecretsanta/pull/19), publication après validation de la CI complète.
 
 | Priorité | Sujet | Résultat |
 | --- | --- | --- |
