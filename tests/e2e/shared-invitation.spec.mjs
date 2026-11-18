@@ -44,7 +44,7 @@ test("un lien commun permet de choisir son nom avant la connexion et de rejoindr
     await guest.getByRole("link", { name: "Créer un compte", exact: true }).click();
     await expect(guest.getByRole("heading", { name: "Créer mon compte", exact: true })).toBeVisible();
     expect(new URL(guest.url()).searchParams.get("next")).toBe(next);
-    await guest.getByRole("link", { name: "Revenir à la connexion", exact: true }).click();
+    await guest.getByRole("navigation", { name: "Accès au compte" }).getByRole("link", { name: "Se connecter", exact: true }).click();
     await expect(guest.getByRole("heading", { name: "Se connecter", exact: true })).toBeVisible();
     await guest.getByLabel("Adresse mail").fill(demoEmail("lea"));
     await guest.getByLabel("Mot de passe", { exact: true }).fill(localPassword);
