@@ -56,7 +56,7 @@ export function excludedMerchant(hostname: string) {
 }
 
 export function nextPath(value: unknown) {
-  return typeof value === "string" && /^\/invitation\/[a-f0-9]{64}$/.test(value) ? value : "/groupes";
+  return typeof value === "string" && /^\/invitation\/[a-f0-9]{64}(?:\?participant=[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})?$/.test(value) ? value : "/groupes";
 }
 
 export function appOrigin() {

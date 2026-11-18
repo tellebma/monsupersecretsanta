@@ -4,10 +4,11 @@ import { addHost, configureEdition, invite, removeMember, reveal } from "@/app/a
 import { ActionForm, ExceptionFields, Submit } from "@/app/components";
 import { dateLabel, priceLabel } from "@/lib/format";
 import { requireSession } from "@/lib/supabase";
-import type { Edition, Gift } from "@/lib/types";
+import type { Edition, Gift, SharedInvitation } from "@/lib/types";
 import GiftCard from "../../gift-card";
 import EditionFields from "../edition-fields";
 import MemberRemoval from "../member-removal";
+import { GroupInvitation } from "../group-invitation";
 
 const states = { draft: "Inscriptions ouvertes", scheduled: "Tirage programmé", blocked: "Tirage à ajuster", drawn: "Tirage effectué" };
 
@@ -22,6 +23,12 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
   if (error) throw new Error(error.message);
   if (!data) notFound();
   const edition = data as Edition;
+  let invitation: SharedInvitation | null = null;
+  if (edition.owner && edition.state !== "drawn") {
+    const result = await db.rpc("santa_shared_invitation", { p_edition: id });
+    if (result.error) throw new Error(result.error.message);
+    invitation = result.data as SharedInvitation | null;
+  }
   const closed = Date.parse(edition.exchange_at) <= Date.now();
   let gifts: Gift[] = [];
   if (edition.recipient) {
@@ -53,11 +60,11 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
     </section>}
     {!edition.can_reveal && !edition.owner && <p className="panel">{edition.state === "drawn" ?
       "Tu ne fais pas partie de la liste validée pour ce tirage." : "Ton résultat sera disponible ici une fois le tirage effectué."}</p>}
-    {edition.owner && <Organization edition={edition}/>}
+    {edition.owner && <Organization edition={edition} invitation={invitation}/>}
   </div>;
 }
 
-function Organization({ edition }: { edition: Edition }) {
+function Organization({ edition, invitation }: { edition: Edition; invitation: SharedInvitation | null }) {
   const { id } = edition;
   const members = edition.members ?? [];
   return <section className="stack">
@@ -91,15 +98,16 @@ function Organization({ edition }: { edition: Edition }) {
           </div>
         </ActionForm>
         <div className="stack">
-          <section className="panel stack">
-            <h3>Inviter des participants</h3>
+          <GroupInvitation edition={id} group={edition.name} invitation={invitation} open={edition.state !== "scheduled"}/>
+          <details className="panel stack">
+            <summary>Inviter aussi par e-mail</summary>
             {edition.state === "scheduled" ? <p>Les inscriptions sont closes. Tu peux les rouvrir avant le tirage.</p> :
               <ActionForm action={invite.bind(null, id)} className="stack tight">
                 <label>Adresses mail<textarea name="emails" rows={3} required placeholder="Une adresse par ligne"/></label>
                 <Submit className="button outline">Envoyer les invitations</Submit>
               </ActionForm>}
             {Boolean(edition.pending?.length) && <div><b>En attente</b><ul className="pending">{edition.pending?.map((mail) => <li key={mail}>{mail}</li>)}</ul></div>}
-          </section>
+          </details>
           <MemberRemoval action={removeMember.bind(null, id)} members={members} scheduled={edition.state === "scheduled"}/>
           {edition.state !== "scheduled" && <ActionForm action={addHost.bind(null, id)} className="panel stack">
             <h3>Participer à mon groupe</h3>

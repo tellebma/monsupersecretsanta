@@ -180,6 +180,7 @@ test("crée un groupe, refuse un tirage incomplet et accepte une invitation avec
   await page.getByRole("button", { name: "Créer l’édition" }).click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
   const email = demoEmail("invitation-qa");
+  await page.getByText("Inviter aussi par e-mail", { exact: true }).click();
   await page.getByLabel("Adresses mail").fill(email);
   await page.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
@@ -216,7 +217,7 @@ test("crée un groupe, refuse un tirage incomplet et accepte une invitation avec
     await expect(page.getByRole("checkbox", { name: /^Camille QA/ })).toBeChecked();
     await page.getByRole("button", { name: "Valider et programmer" }).click();
     await expect(page.getByText("Tirage programmé", { exact: true })).toBeVisible();
-    await expect(page.getByText("Les inscriptions sont closes.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Les inscriptions sont closes. Tu peux les rouvrir avant le tirage.", { exact: true }).first()).toBeVisible();
   } finally {
     await invitee.close();
     await mail.close();

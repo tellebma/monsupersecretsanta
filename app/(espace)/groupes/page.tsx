@@ -18,7 +18,7 @@ export default async function GroupsPage() {
       <Link className="button" href="/groupes/nouveau">Créer un groupe</Link>
     </div>
     {editions.length === 0 && <div className="panel empty"><div className="brand-mark"><GiftIcon/></div><h2>Ton premier Secret Santa</h2>
-      <p>Crée un groupe ou ouvre le lien reçu par mail pour rejoindre un groupe existant.</p></div>}
+      <p>Crée un groupe ou ouvre le lien d’invitation partagé par l’organisateur pour rejoindre un groupe existant.</p></div>}
     <div className="card-grid">
       {editions.map((edition) => <article className="panel stack" key={edition.id}>
         <div className="inline spread"><span className="pill">{states[edition.state]}</span><span className="hint">{edition.year}</span></div>

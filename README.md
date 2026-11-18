@@ -40,10 +40,18 @@ Lancez `npm ci`, puis `npm run dev`. L’accueil est disponible sur [localhost:3
 
 ## Mettre en ligne
 
-1. Appliquez [la migration initiale](supabase/migrations/202611090001_initial.sql) au projet Supabase. Le schéma `santa` reste privé. Les appels de l’application passent par les fonctions `public.santa_*`.
+1. Appliquez les migrations de `supabase/migrations` dans l’ordre au projet Supabase. Le schéma `santa` reste privé. Les appels de l’application passent par les fonctions `public.santa_*`. L’aperçu d’invitation utilise une fonction réservée au serveur (`service_role`) : un lien partagé permet de présenter le groupe, l’organisateur et les noms à sélectionner avant connexion, sans exposer les adresses mail.
 2. Dans Supabase Auth, activez Email, Google et Apple. Ajoutez l’adresse `https://votre-site/auth/callback` aux URL autorisées et renseignez l’URL du site. Pour l’inscription et la réinitialisation par mail, copiez le contenu de [supabase/templates/code.html](supabase/templates/code.html) dans les modèles **Magic Link** et **Confirm signup**, en conservant `{{ .Token }}`, puis branchez un SMTP personnalisé. Les modèles sont déjà raccordés dans la configuration Supabase locale. Configurez les identifiants OAuth dans les tableaux de bord des fournisseurs.
 3. Importez le dépôt dans Vercel et renseignez les variables de `.env.example`. `APP_ORIGIN` doit être l’origine publique du site, sans chemin. Ajoutez une clé Resend et une adresse d’expédition sur un domaine validé. Générez un secret aléatoire distinct pour `SCHEDULE_SECRET`. Le mot de passe PostgreSQL sert uniquement à administrer la base.
 4. Dans Supabase Vault, créez `santa_app_origin` et `santa_schedule_secret` avec les mêmes valeurs qu’en production, puis exécutez [le script de planification](supabase/schedule.sql). Le planificateur appelle le site toutes les minutes. Après avoir raccordé le domaine final, mettez à jour l’origine dans Vercel, Supabase Auth et Vault.
+
+## Invitations par lien partagé
+
+Dans l’organisation d’un groupe, saisissez les noms des participants (un par ligne), puis créez l’invitation. Un même lien peut être copié ou partagé sur WhatsApp et via le menu de partage du téléphone. Aucun compte WhatsApp Business ni service d’envoi de SMS n’est nécessaire : l’organisateur choisit lui-même les destinataires dans son application de messagerie.
+
+À l’ouverture du lien, les invités voient la présentation du groupe et choisissent leur nom **avant** de se connecter. Le choix est conservé pendant la connexion, la création du compte et le retour OAuth. Après connexion, une confirmation associe le nom au compte. La sélection seule ne réserve pas le nom ; l’association est atomique et un compte ne peut pas choisir plusieurs noms dans une même édition. Le lien donne accès aux noms de la liste, sans adresse mail ni résultat du tirage. Les inscriptions se ferment lorsque l’organisateur programme le tirage. Le retrait d’un membre supprime aussi son nom de l’invitation partagée.
+
+Les invitations personnelles déjà envoyées par mail continuent de fonctionner. Les notifications de l’application restent envoyées par mail. Appliquez toutes les migrations avant de déployer ce parcours, notamment `20261118180656_invitation_preview.sql` et `20261118182034_shared_group_invitations.sql`.
 
 ## Statistiques de fréquentation
 
