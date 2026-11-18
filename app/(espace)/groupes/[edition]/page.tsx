@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addHost, configureEdition, invite, removeMember, reveal } from "@/app/actions";
+import { addHost, configureEdition, invite, removeMember, renameGroup, reveal } from "@/app/actions";
 import { ActionForm, ExceptionFields, Submit } from "@/app/components";
 import { dateLabel, priceLabel } from "@/lib/format";
 import { requireSession } from "@/lib/supabase";
@@ -72,6 +72,14 @@ function Organization({ edition, invitation }: { edition: Edition; invitation: S
       <h2>Organisation</h2>
       {edition.state === "drawn" && <Link className="button outline" href={`/groupes/nouveau?groupe=${edition.group_id}`}>Créer la prochaine édition</Link>}
     </div>
+    <details className="panel">
+      <summary>Modifier le nom du groupe</summary>
+      <ActionForm action={renameGroup.bind(null, edition.group_id)} className="stack tight">
+        <label>Nom du groupe<input key={edition.name} name="name" defaultValue={edition.name} maxLength={100} required autoComplete="off"/></label>
+        <p className="hint">Ce nom est commun à toutes les éditions du groupe.</p>
+        <div><Submit>Enregistrer le nom</Submit></div>
+      </ActionForm>
+    </details>
     {edition.state === "blocked" && <p className="feedback error">Le tirage n’a pas pu être réalisé. Vérifie la liste, les exceptions et les trois années précédentes, puis programme une nouvelle date.</p>}
     {edition.state === "drawn" ? <div className="panel stack">
       <p>Ce tirage est définitif. Chaque participant peut ouvrir son propre résultat.</p>

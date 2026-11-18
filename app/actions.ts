@@ -140,6 +140,18 @@ export async function joinSharedInvitation(token: string, participant: string, _
   return { error: "Cette invitation n’est plus disponible ou les inscriptions sont closes." };
 }
 
+export async function renameGroup(group: string, _: Result, data: FormData): Promise<Result> {
+  const name = field(data, "name");
+  if (!name || Array.from(name).length > 100) return { error: "Le nom du groupe doit contenir entre 1 et 100 caractères." };
+  const db = await requireSession();
+  const { error } = await db.rpc("santa_rename_group", { p_group: group, p_name: name });
+  if (error) return { error: error.message };
+  revalidatePath("/groupes");
+  revalidatePath("/groupes/[edition]", "page");
+  revalidatePath("/invitation/[token]", "page");
+  return { message: "Le nom du groupe a été modifié." };
+}
+
 export async function invite(edition: string, _: Result, data: FormData): Promise<Result> {
   const emails = [...new Set(field(data, "emails").toLowerCase().split(/[\s,;]+/).filter(Boolean))];
   const db = await requireSession();
