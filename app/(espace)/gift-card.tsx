@@ -4,6 +4,7 @@ import { ActionForm, Submit } from "@/app/components";
 import { priceLabel, safeLink, safeProductImage } from "@/lib/format";
 import type { Gift } from "@/lib/types";
 import { ProductImage } from "@/app/product-image";
+import { ConfirmAction } from "@/app/confirm-action";
 
 const statuses = { reserved: "Réservé par toi", unavailable: "Indisponible", bought: "Déjà acheté" };
 const availability: Record<string, string> = {
@@ -15,7 +16,7 @@ export default function GiftCard({ gift, edition, closed = false }: { gift: Gift
   const cover = gift.links.map((offer) => safeProductImage(offer.image)).find(Boolean);
   const coverUrl = cover ? undefined : gift.links.map((offer) => safeLink(offer.url)).find(Boolean)?.href;
   return <article className="panel gift-card stack">
-    {!edition && (cover || coverUrl) && <ProductImage src={cover?.href} productUrl={coverUrl} className="gift-cover"/>}
+    {(cover || coverUrl) && <ProductImage src={cover?.href} productUrl={coverUrl} className="gift-cover"/>}
     <div className="inline spread start">
       <h3>{gift.name}</h3>
       {gift.status && <span className="pill">{statuses[gift.status]}</span>}
@@ -38,9 +39,9 @@ export default function GiftCard({ gift, edition, closed = false }: { gift: Gift
         </li>;
       })}
     </ul>}
-    {!edition && <div className="inline">
+    {!edition && <div className="card-actions">
       <Link className="button outline small" href={`/mes-cadeaux/${gift.id}`}>Modifier<span className="sr-only"> · {gift.name}</span></Link>
-      <ActionForm action={removeGift.bind(null, gift.id)}><Submit className="text-button">Retirer de ma liste<span className="sr-only"> · {gift.name}</span></Submit></ActionForm>
+      <ConfirmAction action={removeGift.bind(null, gift.id)} label="Retirer de ma liste" item={gift.name} question={`Retirer « ${gift.name} » de ta liste ?`}/>
     </div>}
     {edition && !closed && (!gift.status || (gift.status === "reserved" && gift.mine)) &&
       <ActionForm action={giftClaim.bind(null, edition, gift.id)} className="inline">

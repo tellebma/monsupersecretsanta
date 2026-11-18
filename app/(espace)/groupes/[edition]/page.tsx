@@ -9,8 +9,7 @@ import GiftCard from "../../gift-card";
 import EditionFields from "../edition-fields";
 import MemberRemoval from "../member-removal";
 import { GroupInvitation } from "../group-invitation";
-
-const states = { draft: "Inscriptions ouvertes", scheduled: "Tirage programmé", blocked: "Tirage à ajuster", drawn: "Tirage effectué" };
+import { EditionStatus, GroupProgress, PageHeader } from "@/app/ui";
 
 export const metadata = { title: "Mon Secret Santa" };
 export const dynamic = "force-dynamic";
@@ -23,6 +22,8 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
   if (error) throw new Error(error.message);
   if (!data) notFound();
   const edition = data as Edition;
+  const account = edition.owner ? (await db.auth.getClaims()).data?.claims.sub : undefined;
+  const canParticipate = !edition.members?.some((member) => member.id === account);
   let invitation: SharedInvitation | null = null;
   if (edition.owner && edition.state !== "drawn") {
     const result = await db.rpc("santa_shared_invitation", { p_edition: id });
@@ -38,15 +39,13 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
   }
   return <div className="stack">
     <Link className="back" href="/groupes">← Mes groupes</Link>
-    <header className="page-header">
-      <div><p className="eyebrow"><span/> ÉDITION {edition.year}</p><h1 className="page-title">{edition.name}</h1></div>
-      <span className="pill">{states[edition.state]}</span>
-    </header>
-    <div className="panel facts">
-      <div><b>Tirage</b><p>{dateLabel(edition.draw_at)}</p></div>
-      <div><b>Échange</b><p>{dateLabel(edition.exchange_at)}</p></div>
-      {edition.budget && <div><b>Budget total indicatif</b><p>{priceLabel(edition.budget)}</p></div>}
-    </div>
+    <PageHeader eyebrow={`ÉDITION ${edition.year}`} title={edition.name} action={<EditionStatus state={edition.state}/>}/>
+    <GroupProgress state={edition.state}/>
+    <dl className="panel facts">
+      <div><dt>Tirage</dt><dd>{dateLabel(edition.draw_at)}</dd></div>
+      <div><dt>Échange des cadeaux</dt><dd>{dateLabel(edition.exchange_at)}</dd></div>
+      {edition.budget && <div><dt>Budget total indicatif</dt><dd>{priceLabel(edition.budget)}</dd></div>}
+    </dl>
     {edition.can_reveal && !edition.recipient && <section className="panel reveal stack">
       <div><p className="eyebrow"><span/> LA SURPRISE T’ATTEND</p><h2>Ton tirage est prêt</h2><p>Découvre à qui tu vas offrir un cadeau.</p></div>
       <ActionForm action={reveal.bind(null, id)}><Submit>Tirer au sort</Submit></ActionForm>
@@ -60,11 +59,11 @@ export default async function EditionPage({ params }: { params: Promise<{ editio
     </section>}
     {!edition.can_reveal && !edition.owner && <p className="panel">{edition.state === "drawn" ?
       "Tu ne fais pas partie de la liste validée pour ce tirage." : "Ton résultat sera disponible ici une fois le tirage effectué."}</p>}
-    {edition.owner && <Organization edition={edition} invitation={invitation}/>}
+    {edition.owner && <Organization edition={edition} invitation={invitation} canParticipate={canParticipate}/>}
   </div>;
 }
 
-function Organization({ edition, invitation }: { edition: Edition; invitation: SharedInvitation | null }) {
+function Organization({ edition, invitation, canParticipate }: { edition: Edition; invitation: SharedInvitation | null; canParticipate: boolean }) {
   const { id } = edition;
   const members = edition.members ?? [];
   return <section className="stack">
@@ -72,14 +71,6 @@ function Organization({ edition, invitation }: { edition: Edition; invitation: S
       <h2>Organisation</h2>
       {edition.state === "drawn" && <Link className="button outline" href={`/groupes/nouveau?groupe=${edition.group_id}`}>Créer la prochaine édition</Link>}
     </div>
-    <details className="panel">
-      <summary>Modifier le nom du groupe</summary>
-      <ActionForm action={renameGroup.bind(null, edition.group_id)} className="stack tight">
-        <label>Nom du groupe<input key={edition.name} name="name" defaultValue={edition.name} maxLength={100} required autoComplete="off"/></label>
-        <p className="hint">Ce nom est commun à toutes les éditions du groupe.</p>
-        <div><Submit>Enregistrer le nom</Submit></div>
-      </ActionForm>
-    </details>
     {edition.state === "blocked" && <p className="feedback error">Le tirage n’a pas pu être réalisé. Vérifie la liste, les exceptions et les trois années précédentes, puis programme une nouvelle date.</p>}
     {edition.state === "drawn" ? <div className="panel stack">
       <p>Ce tirage est définitif. Chaque participant peut ouvrir son propre résultat.</p>
@@ -88,26 +79,10 @@ function Organization({ edition, invitation }: { edition: Edition; invitation: S
         {member.name} · {member.gift_count} {member.gift_count === 1 ? "souhait" : "souhaits"}
       </li>)}</ul>
     </div> :
-      <div className="editor-grid">
-        <ActionForm action={configureEdition.bind(null, id)} className="panel stack">
-          <h3>Préparer le tirage</h3>
-          <EditionFields edition={edition}/>
-          <fieldset><legend>Participants retenus</legend>
-            {members.length ? members.map((member) => <label className="check-row" key={member.id}>
-              <input type="checkbox" name="member" value={member.id} defaultChecked={member.selected}/>
-              <span className="break">{member.name}<small>{member.email}</small><small>{member.gift_count} {member.gift_count === 1 ? "souhait" : "souhaits"}</small></span>
-            </label>) : <p className="hint">Les invités apparaissent ici après avoir rejoint le groupe.</p>}
-          </fieldset>
-          <ExceptionFields key={members.map(({ id }) => id).join(":")} members={members} initial={edition.exceptions}/>
-          <p className="hint">Valider la liste ferme les inscriptions. Le tirage se lance ensuite à la date indiquée.</p>
-          <div className="inline">
-            <Submit intent="schedule">Valider et programmer</Submit>
-            <Submit className="button outline" intent="draft">{edition.state === "scheduled" ? "Rouvrir les inscriptions" : "Enregistrer le brouillon"}</Submit>
-          </div>
-        </ActionForm>
+      <div className="organization-grid">
         <div className="stack">
           <GroupInvitation edition={id} group={edition.name} invitation={invitation} open={edition.state !== "scheduled"}/>
-          <details className="panel stack">
+          <details className="panel">
             <summary>Inviter aussi par e-mail</summary>
             {edition.state === "scheduled" ? <p>Les inscriptions sont closes. Tu peux les rouvrir avant le tirage.</p> :
               <ActionForm action={invite.bind(null, id)} className="stack tight">
@@ -116,13 +91,46 @@ function Organization({ edition, invitation }: { edition: Edition; invitation: S
               </ActionForm>}
             {Boolean(edition.pending?.length) && <div><b>En attente</b><ul className="pending">{edition.pending?.map((mail) => <li key={mail}>{mail}</li>)}</ul></div>}
           </details>
-          <MemberRemoval action={removeMember.bind(null, id)} members={members} scheduled={edition.state === "scheduled"}/>
-          {edition.state !== "scheduled" && <ActionForm action={addHost.bind(null, id)} className="panel stack">
+          {edition.state !== "scheduled" && canParticipate && <ActionForm action={addHost.bind(null, id)} className="panel stack">
             <h3>Participer à mon groupe</h3>
+            <p className="hint">Tu organises ce Secret Santa. Ajoute aussi ton nom si tu souhaites recevoir et offrir un cadeau.</p>
             <label>Nom d’affichage<input name="name" maxLength={80} required/></label>
             <Submit className="button outline">M’ajouter aux participants</Submit>
           </ActionForm>}
         </div>
+        <ActionForm action={configureEdition.bind(null, id)} className="panel stack">
+          <div><span className="card-kicker">ÉTAPE 2</span><h3>Préparer le tirage</h3><p>Choisis les dates et les participants, puis programme le tirage.</p></div>
+          <EditionFields edition={edition}/>
+          <fieldset><legend>Participants retenus</legend>
+            {members.length ? members.map((member) => <label className="check-row" key={member.id}>
+              <input type="checkbox" name="member" value={member.id} defaultChecked={member.selected}/>
+              <span className="break">{member.name}<small>{member.email}</small><small>{member.gift_count} {member.gift_count === 1 ? "souhait" : "souhaits"}</small></span>
+            </label>) : <p className="hint">Les invités apparaissent ici après avoir rejoint le groupe.</p>}
+          </fieldset>
+          {members.length > 1 && <details className="disclosure" open={Boolean(edition.exceptions?.length)}>
+            <summary>Exceptions au tirage{edition.exceptions?.length ? ` · ${edition.exceptions.length}` : " (facultatif)"}</summary>
+            <ExceptionFields key={members.map(({ id }) => id).join(":")} members={members} initial={edition.exceptions}/>
+          </details>}
+          <p className="hint">Valider la liste ferme les inscriptions. Le tirage se lance ensuite à la date indiquée.</p>
+          <div className="inline">
+            <Submit intent="schedule">Valider et programmer</Submit>
+            <Submit className="button outline" intent="draft">{edition.state === "scheduled" ? "Rouvrir les inscriptions" : "Enregistrer le brouillon"}</Submit>
+          </div>
+        </ActionForm>
       </div>}
+    <div className="settings-grid">
+      <details className="panel">
+        <summary>Modifier le nom du groupe</summary>
+        <ActionForm action={renameGroup.bind(null, edition.group_id)} className="stack tight">
+          <label>Nom du groupe<input key={edition.name} name="name" defaultValue={edition.name} maxLength={100} required autoComplete="off"/></label>
+          <p className="hint">Ce nom est commun à toutes les éditions du groupe.</p>
+          <div><Submit>Enregistrer le nom</Submit></div>
+        </ActionForm>
+      </details>
+      {edition.state !== "drawn" && members.length > 0 && <details className="panel">
+        <summary>Gérer les participants</summary>
+        <MemberRemoval action={removeMember.bind(null, id)} members={members} scheduled={edition.state === "scheduled"}/>
+      </details>}
+    </div>
   </section>;
 }

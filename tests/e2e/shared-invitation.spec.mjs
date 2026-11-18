@@ -15,7 +15,7 @@ test("un lien commun permet de choisir son nom avant la connexion et de rejoindr
   await page.getByLabel("Nom du groupe").fill(name);
   await page.getByLabel("Date et heure du tirage").fill(date(3));
   await page.getByLabel("Date et heure de l’échange").fill(date(9));
-  await page.getByRole("button", { name: "Créer l’édition" }).click();
+  await page.getByRole("button", { name: "Créer le groupe" }).click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
   const editionUrl = page.url();
   await page.getByLabel("Noms des participants").fill("Léa QA\nNora QA");
@@ -32,11 +32,11 @@ test("un lien commun permet de choisir son nom avant la connexion et de rejoindr
   const otherGuest = await otherContext.newPage();
   try {
     await guest.goto(url);
-    await expect(guest.getByLabel("Quel est votre nom ?")).toBeVisible();
+    await expect(guest.getByLabel("Quel est ton nom ?")).toBeVisible();
     await expect(guest.getByLabel("Adresse mail")).toHaveCount(0);
     const { violations } = await new AxeBuilder({ page: guest }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(violations.map(({ id }) => id)).toEqual([]);
-    await guest.getByLabel("Quel est votre nom ?").selectOption({ label: "Léa QA" });
+    await guest.getByLabel("Quel est ton nom ?").selectOption({ label: "Léa QA" });
     await guest.getByRole("button", { name: "C’est moi, continuer", exact: true }).click();
     await expect(guest.getByRole("heading", { name: "Se connecter", exact: true })).toBeVisible();
     const next = new URL(guest.url()).searchParams.get("next");

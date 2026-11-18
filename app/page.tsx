@@ -58,6 +58,7 @@ export default async function Home() {
           <Link className="button" href={signedIn ? "/groupes" : "/connexion?mode=signup"}>
             {signedIn ? "Accéder à mes groupes" : "Créer mon compte"} <span aria-hidden="true">↗</span>
           </Link>
+          <a className="hero-secondary" href="#how">Comment ça marche <span aria-hidden="true">↓</span></a>
         </div>
         <Wrapping/>
       </section>

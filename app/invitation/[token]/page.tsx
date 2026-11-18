@@ -26,17 +26,17 @@ export default async function Invitation({ params, searchParams }: {
         <InvitationWelcome invitation={invitation} heading="h1"/>
         {invitation.open ? <>
           <form action={path} method="get" className="stack">
-            <label>Quel est votre nom ?<select name="participant" defaultValue="" required>
-              <option value="" disabled>Sélectionnez votre nom</option>
+            <label>Quel est ton nom ?<select name="participant" defaultValue="" required>
+              <option value="" disabled>Choisis ton nom</option>
               {invitation.participants?.map(({ id, name, available }) => <option key={id} value={id} disabled={!available}>
                 {name}{available ? "" : " · Déjà inscrit"}
               </option>)}
             </select></label>
-            <p className="hint">Choisissez votre nom, puis connectez-vous ou créez votre compte.</p>
+            <p className="hint">Choisis ton nom, puis connecte-toi ou crée ton compte.</p>
             {invitation.participants?.some(({ available }) => available) ? <button className="button" type="submit">C’est moi, continuer</button> :
-              <p role="status" className="feedback">Tous les noms ont déjà été choisis. Contactez l’organisateur si le vôtre manque.</p>}
+              <p role="status" className="feedback">Tous les noms ont déjà été choisis. Contacte l’organisateur si le tien manque.</p>}
           </form>
-          <p className="hint">Votre nom n’apparaît pas ? Demandez à l’organisateur de vous ajouter à la liste.</p>
+          <p className="hint">Ton nom n’apparaît pas ? Demande à l’organisateur de t’ajouter à la liste.</p>
         </> : <p className="feedback">Les inscriptions à ce Secret Santa sont closes.</p>}
         <Link href="/connexion">Déjà inscrit ? Accéder à mes groupes</Link>
       </section></main></>;
@@ -53,7 +53,7 @@ export default async function Invitation({ params, searchParams }: {
     <main className="narrow"><section className="panel stack">
       {participant ? <>
         <InvitationWelcome invitation={invitation} heading="h1"/>
-        <p>Vous avez choisi <strong>{participant.name}</strong>. Confirmez pour rejoindre le groupe avec votre compte.</p>
+        <p>Tu as choisi <strong>{participant.name}</strong>. Confirme pour rejoindre le groupe avec ton compte.</p>
         <ActionForm action={joinSharedInvitation.bind(null, token, participant.id)} className="stack">
           <Submit>Rejoindre en tant que {participant.name}</Submit>
         </ActionForm>

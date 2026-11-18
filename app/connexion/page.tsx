@@ -25,13 +25,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div><p className="eyebrow"><span/> TON ESPACE</p>
           <h1 className="page-title">{mode === "signup" ? "Créer mon compte" : mode === "reset" ? "Réinitialiser mon mot de passe" : "Se connecter"}</h1>
         </div>
+        {mode !== "reset" && <nav className="auth-switch" aria-label="Accès au compte">
+          <Link href={link("login")} aria-current={mode === "login" ? "page" : undefined}>Se connecter</Link>
+          <Link href={link("signup")} aria-current={mode === "signup" ? "page" : undefined}>Créer un compte</Link>
+        </nav>}
         {!configured() && <p className="feedback">L’environnement de connexion est en cours de configuration.</p>}
         {params.erreur === "oauth" && <p className="feedback error">La connexion a échoué. Tu peux réessayer.</p>}
         {mode !== "reset" && <><div className="stack tight"><SocialForm provider="google" next={next}/><SocialForm provider="apple" next={next}/></div><p className="divider">ou par mail</p></>}
         <AuthForm key={mode} mode={mode} next={next}/>
         <div className="inline spread auth-links">
-          {mode === "login" ? <><Link href={link("signup")}>Créer un compte</Link><Link href={link("reset")}>Mot de passe oublié ?</Link></> :
-            <Link href={link("login")}>Revenir à la connexion</Link>}
+          {mode === "login" ? <Link href={link("reset")}>Mot de passe oublié ?</Link> : mode === "reset" ?
+            <Link href={link("login")}>Revenir à la connexion</Link> : <p className="hint">Tes idées et tes tirages restent dans un seul compte.</p>}
         </div>
       </section>
     </main></>;

@@ -10,7 +10,7 @@ export default async function SpaceLayout({ children }: { children: ReactNode })
   await requireSession();
   return <>
     <a className="skip-link" href="#main-content">Aller au contenu</a>
-    <header className="top">
+    <header className="top app-top">
       <div className="shell bar app-bar">
         <Brand/>
         <SpaceNavigation>
@@ -19,5 +19,6 @@ export default async function SpaceLayout({ children }: { children: ReactNode })
       </div>
     </header>
     <main id="main-content" tabIndex={-1} className="shell workspace">{children}</main>
+    <footer className="shell app-footer">Mon Super Secret Santa <span>Un peu de mystère, beaucoup d’attention.</span></footer>
   </>;
 }

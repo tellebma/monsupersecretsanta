@@ -20,6 +20,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
   const [result, setResult] = useState<SearchResult>();
   const [searching, setSearching] = useState(false);
   const [themeId, setThemeId] = useState<string | null>(null);
+  const [allThemes, setAllThemes] = useState(false);
   const theme = giftTheme(themeId);
   const request = useRef<AbortController>(null);
 
@@ -105,7 +106,7 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
         {theme && <button type="button" className="text-button" disabled={disabled} onClick={resetSearch}>Toutes les idées</button>}
       </div>
       <div className={styles.themeGrid} role="group" aria-label="Thématiques de cadeaux">
-        {giftThemes.map((item) => <button key={item.id} type="button" className={styles.themeCard}
+        {giftThemes.filter((item, index) => allThemes || index < 6 || item.id === themeId).map((item) => <button key={item.id} type="button" className={styles.themeCard}
           aria-pressed={item.id === themeId} disabled={disabled} onClick={() => {
             setThemeId(item.id);
             setQuery("");
@@ -114,6 +115,9 @@ export function GiftSearch({ disabled, importing, links, editorVisible, suggesti
           <span aria-hidden="true" className={styles.themeIcon}>{item.icon}</span><span>{item.label}</span>
         </button>)}
       </div>
+      <button type="button" className={`text-button ${styles.moreThemes}`} aria-expanded={allThemes} onClick={() => setAllThemes(!allThemes)}>
+        {allThemes ? "Réduire les thématiques" : "Voir les 18 thématiques"}
+      </button>
       {theme && <div className={styles.themeSelection}>
         <h3>{theme.label}</h3><p>{theme.description}</p>
         <div className={styles.themeIdeas} role="group" aria-label={`Affiner : ${theme.label}`}>

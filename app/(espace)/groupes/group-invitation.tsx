@@ -8,7 +8,7 @@ export function GroupInvitation({ edition, group, invitation, open }: {
   edition: string; group: string; invitation: SharedInvitation | null; open: boolean;
 }) {
   return <section className="panel stack">
-    <div><h3>Inviter avec un lien</h3><p>Ajoute les noms des participants et partage le même lien dans votre conversation WhatsApp, par message ou ailleurs.</p></div>
+    <div><span className="card-kicker">ÉTAPE 1</span><h3>Inviter avec un lien</h3><p>Ajoute les noms, puis partage le lien du groupe dans votre conversation.</p></div>
     {invitation && <>
       <InvitationShare url={`${appOrigin()}/invitation/${invitation.token}`} group={group}/>
       <ul className="pending">{invitation.participants.map(({ id, name, joined }) => <li key={id} className="inline spread list-row">
