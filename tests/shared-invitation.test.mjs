@@ -26,7 +26,7 @@ test("one shared link claims named places once, keeps contacts private and respe
         $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     `);
     for (const file of ["202611090001_initial.sql", "202611100003_remove_members.sql",
-      "20261118180656_invitation_preview.sql", "20261118182034_shared_group_invitations.sql"]) {
+      "20261118185026_invitation_preview.sql", "20261118185034_shared_group_invitations.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
     for (const [id, name] of [[host, "Maxime"], [camille, "Camille"], [lea, "Léa"], [stranger, "Autre"]]) {

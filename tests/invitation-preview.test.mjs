@@ -14,7 +14,7 @@ test("invitation preview only reveals names for an active token through the serv
       create function auth.uid() returns uuid language sql stable as
         $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     `);
-    for (const file of ["202611090001_initial.sql", "20261118180656_invitation_preview.sql"]) {
+    for (const file of ["202611090001_initial.sql", "20261118185026_invitation_preview.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
     const host = "00000000-0000-4000-8000-000000000001";

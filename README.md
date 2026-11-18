@@ -51,7 +51,7 @@ Dans l’organisation d’un groupe, saisissez les noms des participants (un par
 
 À l’ouverture du lien, les invités voient la présentation du groupe et choisissent leur nom **avant** de se connecter. Le choix est conservé pendant la connexion, la création du compte et le retour OAuth. Après connexion, une confirmation associe le nom au compte. La sélection seule ne réserve pas le nom ; l’association est atomique et un compte ne peut pas choisir plusieurs noms dans une même édition. Le lien donne accès aux noms de la liste, sans adresse mail ni résultat du tirage. Les inscriptions se ferment lorsque l’organisateur programme le tirage. Le retrait d’un membre supprime aussi son nom de l’invitation partagée.
 
-Les invitations personnelles déjà envoyées par mail continuent de fonctionner. Les notifications de l’application restent envoyées par mail. Appliquez toutes les migrations avant de déployer ce parcours, notamment `20261118180656_invitation_preview.sql` et `20261118182034_shared_group_invitations.sql`.
+Les invitations personnelles déjà envoyées par mail continuent de fonctionner. Les notifications de l’application restent envoyées par mail. Appliquez toutes les migrations avant de déployer ce parcours, notamment `20261118185026_invitation_preview.sql` et `20261118185034_shared_group_invitations.sql`.
 
 ## Statistiques de fréquentation
 
