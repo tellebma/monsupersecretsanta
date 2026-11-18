@@ -110,6 +110,36 @@ export async function createEdition(_: Result, data: FormData): Promise<Result> 
   redirect(`/groupes/${id}`);
 }
 
+export async function addInvitationNames(edition: string, _: Result, data: FormData): Promise<Result> {
+  const db = await requireSession();
+  const names = field(data, "names").split(/\r?\n/).map((name) => name.trim()).filter(Boolean);
+  const { error } = await db.rpc("santa_add_invitation_names", { p_edition: edition, p_names: names });
+  if (error) return { error: error.message };
+  revalidatePath(`/groupes/${edition}`);
+  return { message: "La liste est prête. Partage le même lien avec tous les participants." };
+}
+
+export async function removeInvitationName(edition: string, name: string, _: Result, _data: FormData): Promise<Result> {
+  const db = await requireSession();
+  const { error } = await db.rpc("santa_remove_invitation_name", { p_edition: edition, p_name: name });
+  if (error) return { error: error.message };
+  revalidatePath(`/groupes/${edition}`);
+  return { message: "Nom retiré de l’invitation." };
+}
+
+export async function joinSharedInvitation(token: string, participant: string, _: Result, _data: FormData): Promise<Result> {
+  const db = await requireSession();
+  const { data, error } = await db.rpc("santa_join_shared", { p_token: token, p_name: participant });
+  if (error) return { error: error.message };
+  if (data?.status === "joined") {
+    revalidatePath(`/groupes/${data.edition}`);
+    redirect(`/groupes/${data.edition}`);
+  }
+  if (data?.status === "taken") return { error: "Ce nom vient d’être choisi par une autre personne. Revenez à la liste pour choisir votre nom." };
+  if (data?.status === "already_member") return { error: "Ce compte participe déjà à ce groupe. Retrouvez-le dans Mes groupes ou connectez-vous avec un autre compte." };
+  return { error: "Cette invitation n’est plus disponible ou les inscriptions sont closes." };
+}
+
 export async function invite(edition: string, _: Result, data: FormData): Promise<Result> {
   const emails = [...new Set(field(data, "emails").toLowerCase().split(/[\s,;]+/).filter(Boolean))];
   const db = await requireSession();

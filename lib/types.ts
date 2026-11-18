@@ -33,3 +33,8 @@ export type Edition = {
   pending?: string[];
   exceptions?: [string, string][];
 };
+
+export type SharedInvitation = {
+  token: string;
+  participants: { id: string; name: string; joined: boolean }[];
+};
