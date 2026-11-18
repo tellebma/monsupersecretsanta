@@ -87,7 +87,7 @@ test("sélectionne un produit trouvé et enregistre sa fiche préremplie", async
   await page.getByRole("button", { name: "Choisir " + product.name }).click();
   await expect(page.getByRole("link", { name: "Voir la fiche cadeau" })).toHaveAttribute("href", "#gift-editor");
   await expect(page.getByRole("textbox", { name: "Nom du cadeau" })).toHaveValue(product.name);
-  await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue(product.description);
+  await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue("");
   await expect(page.getByRole("group", { name: "Liens marchands" }).locator("img")).toHaveAttribute("src", product.image);
   await page.getByRole("textbox", { name: "Description" }).fill("Description personnalisée.");
   await page.getByRole("button", { name: "Choisir " + second.name }).click();

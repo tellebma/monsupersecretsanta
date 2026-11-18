@@ -85,7 +85,6 @@ export function productFromHtml(html: string | Buffer, url: URL, merchantCanonic
   return {
     url: productUrl,
     name,
-    description: text(product?.description ?? meta("og:description") ?? meta("description"), 1500),
     image,
     price,
     currency: text(offers?.priceCurrency ?? meta("product:price:currency") ?? meta("priceCurrency"), 3),

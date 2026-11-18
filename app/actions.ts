@@ -199,7 +199,7 @@ function readLinks(value: string): Link[] {
     if (!url) throw new Error("Vérifiez les liens. Ils doivent commencer par https:// ou http://.");
     const image = safeProductImage(item.image);
     links.set(url.href, {
-      url: url.href, name: item.name?.slice(0, 200), description: item.description?.slice(0, 1500), image: image?.href,
+      url: url.href, name: item.name?.slice(0, 200), image: image?.href,
       price: typeof item.price === "number" && Number.isFinite(item.price) && item.price >= 0 ? item.price : undefined,
       currency: item.currency?.slice(0, 3), availability: item.availability?.slice(0, 100),
     });
@@ -232,7 +232,7 @@ export async function fetchProduct(value: string): Promise<Link | null> {
   const key = importFailureKey(value);
   if (!key) return null;
   const product = await cachedProductMetadata(value).catch(() => null);
-  if ((!product?.name || !product.description || !product.image) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if ((!product?.name || !product.image) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const { error } = await workerClient().rpc("santa_record_import_failure", { p_url: key.url, p_merchant: key.merchant })
       .abortSignal(AbortSignal.timeout(1500));
     if (error) console.error("Import marchand : enregistrement du compteur impossible", error.code);

@@ -11,13 +11,13 @@ test("recovers a LEGO image only when the set number matches exactly", async () 
     assert.equal(query, "LEGO 11390");
     return [{ name: "LEGO Icons 11390 Shenron", image, url: "https://www.fnac.com/lego/a123/w-4" }];
   };
-  assert.deepEqual(await importProductMetadata(url, { importer, search, checkImage }), { url, name: "LEGO Icons 11390 Shenron", image, description: undefined });
+  assert.deepEqual(await importProductMetadata(url, { importer, search, checkImage }), { url, name: "LEGO Icons 11390 Shenron", image });
   assert.deepEqual(await importProductMetadata(url, { importer, search: async () => [], checkImage: async () => true }), {
-    url, name: "LEGO dragon ball shenron goku 11390", description: undefined, image: "https://www.lego.com/cdn/product-assets/product.img.pri/11390_Prod.png",
+    url, name: "LEGO dragon ball shenron goku 11390", image: "https://www.lego.com/cdn/product-assets/product.img.pri/11390_Prod.png",
   });
   const idealo = "https://www.idealo.fr/prix/207082072/lego-super-mario-game-boy-72046.html";
   assert.deepEqual(await importProductMetadata(idealo, { importer, search: async () => [], checkImage: async () => true }), {
-    url: idealo, name: "LEGO super mario game boy 72046", description: undefined, image: "https://www.lego.com/cdn/product-assets/product.img.pri/72046_Prod.png",
+    url: idealo, name: "LEGO super mario game boy 72046", image: "https://www.lego.com/cdn/product-assets/product.img.pri/72046_Prod.png",
   });
   const mismatch = await importProductMetadata(url, {
     importer, checkImage, search: async () => [{ name: "LEGO 113900", image }],
@@ -40,7 +40,7 @@ test("completes LEGO metadata despite an existing image and preserves the origin
     checkImage: async () => { throw new Error("Image already available"); },
     search: async () => [{ name: "LEGO 11390 Shenron", url: "https://www.fnac.com/produit" }],
   });
-  assert.deepEqual(result, { ...original, name: "LEGO 11390 Shenron", description: "Un dragon à construire." });
+  assert.deepEqual(result, { ...original, name: "LEGO 11390 Shenron" });
 });
 
 test("LEGO fallback survives unavailable services without changing complete products", async () => {
@@ -53,8 +53,16 @@ test("LEGO fallback survives unavailable services without changing complete prod
   assert.equal(result.name, "LEGO 11390");
   assert.equal(result.image, undefined);
   const complete = { url, name: "Shenron", description: "Dragon", image: "https://www.lego.com/photo.png" };
-  assert.equal(await importProductMetadata(url, {
+  assert.deepEqual(await importProductMetadata(url, {
     importer: async () => complete,
     search: async () => { throw new Error("Should not search"); },
-  }), complete);
+  }), { url, name: "Shenron", image: complete.image });
+});
+
+test("ignores merchant descriptions for ordinary products", async () => {
+  const url = "https://www.fnac.com/carnet/a123/w-4";
+  const product = { url, name: "Carnet", image: "https://www.fnac.com/photo.jpg", description: "Texte commercial", price: 15 };
+  const result = await importProductMetadata(url, { importer: async () => product });
+  assert.deepEqual(result, { url, name: "Carnet", image: product.image, price: 15 });
+  assert.equal("description" in result, false);
 });
