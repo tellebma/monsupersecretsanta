@@ -26,8 +26,10 @@ test("un lien commun permet de choisir son nom avant la connexion et de rejoindr
   expect(url).toMatch(/\/invitation\/[a-f0-9]{64}$/);
   expect(decodeURIComponent(await page.getByRole("link", { name: "WhatsApp", exact: true }).getAttribute("href"))).toContain(url);
 
-  const guest = await browser.newPage();
-  const otherGuest = await browser.newPage();
+  const guestContext = await browser.newContext({ viewport: page.viewportSize() });
+  const otherContext = await browser.newContext({ viewport: page.viewportSize() });
+  const guest = await guestContext.newPage();
+  const otherGuest = await otherContext.newPage();
   try {
     await guest.goto(url);
     await expect(guest.getByLabel("Quel est votre nom ?")).toBeVisible();
@@ -56,7 +58,7 @@ test("un lien commun permet de choisir son nom avant la connexion et de rejoindr
     await otherGuest.goto(url);
     await expect(otherGuest.getByRole("option", { name: "Léa QA · Déjà inscrit", exact: true })).toBeDisabled();
   } finally {
-    await guest.close();
-    await otherGuest.close();
+    await guestContext.close();
+    await otherContext.close();
   }
 });
