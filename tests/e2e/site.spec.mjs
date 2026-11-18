@@ -99,9 +99,9 @@ test("crée un compte avec le code du mail, définit le mot de passe et se recon
   expect(code).toBeTruthy();
   await page.getByLabel("Code reçu par mail").fill(code);
   await page.getByRole("button", { name: "Vérifier le code" }).click();
-  await expect(page.getByLabel("Nouveau mot de passe")).toBeVisible();
-  await page.getByLabel("Nouveau mot de passe").fill(localPassword);
-  await page.getByLabel("Confirmer le mot de passe").fill(localPassword);
+  await expect(page.getByLabel("Nouveau mot de passe", { exact: true })).toBeVisible();
+  await page.getByLabel("Nouveau mot de passe", { exact: true }).fill(localPassword);
+  await page.getByLabel("Confirmer le mot de passe", { exact: true }).fill(localPassword);
   await page.getByRole("button", { name: "Enregistrer mon mot de passe" }).click();
   await expect(page).toHaveURL(/\/groupes$/);
   await page.getByRole("button", { name: "Déconnexion" }).click();
@@ -165,6 +165,10 @@ test("ajoute deux liens manuellement, modifie puis retire une idée", async ({ p
   await page.getByRole("button", { name: "Enregistrer le cadeau" }).click();
   await expect(gift(page, title)).toContainText("Description modifiée.");
   await gift(page, title).getByRole("button", { name: "Retirer de ma liste" }).click();
+  await gift(page, title).getByRole("button", { name: "Annuler", exact: true }).click();
+  await expect(gift(page, title)).toBeVisible();
+  await gift(page, title).getByRole("button", { name: "Retirer de ma liste" }).click();
+  await gift(page, title).getByRole("button", { name: "Confirmer le retrait", exact: true }).click();
   await expect(gift(page, title)).toHaveCount(0);
 });
 
@@ -177,7 +181,7 @@ test("crée un groupe, refuse un tirage incomplet et accepte une invitation avec
   await page.getByLabel("Date et heure du tirage").fill(localDate(3));
   await page.getByLabel("Date et heure de l’échange").fill(localDate(9));
   await page.getByLabel("Budget total indicatif (€)").fill("35");
-  await page.getByRole("button", { name: "Créer l’édition" }).click();
+  await page.getByRole("button", { name: "Créer le groupe" }).click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
   const email = demoEmail("invitation-qa");
   await page.getByText("Inviter aussi par e-mail", { exact: true }).click();

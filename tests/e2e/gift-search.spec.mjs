@@ -39,6 +39,8 @@ test("explore une thématique, affine la recherche et revient à toutes les idé
   });
   await openGiftSearch(page);
   const themes = page.getByRole("group", { name: "Thématiques de cadeaux", exact: true });
+  await expect(themes.getByRole("button")).toHaveCount(6);
+  await page.getByRole("button", { name: "Voir les 18 thématiques" }).click();
   await expect(themes.getByRole("button")).toHaveCount(18);
   await themes.getByRole("button", { name: "Jeux de société", exact: true }).click();
   await expect(themes.getByRole("button", { name: "Jeux de société", exact: true })).toHaveAttribute("aria-pressed", "true");

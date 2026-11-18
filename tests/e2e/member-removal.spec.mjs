@@ -41,6 +41,7 @@ test("l’organisateur retire des participants avant le tirage et garde son acc�
     await signIn(page, "camille");
     await page.goto(`/groupes/${edition}`);
     await expect(page.getByText("Tirage programmé", { exact: true })).toBeVisible();
+    await page.getByText("Gérer les participants", { exact: true }).click();
     await page.getByLabel("Participant à retirer").selectOption({ label: `Léa (${demoEmail("lea")})` });
     await page.getByRole("button", { name: "Retirer du groupe" }).click();
     await expect(page.getByText("Le tirage repassera en brouillon.", { exact: false })).toBeVisible();

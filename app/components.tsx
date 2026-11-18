@@ -8,6 +8,8 @@ import type { Edition, Gift, Link } from "@/lib/types";
 import { GiftSearch } from "./gift-search";
 import { ProductImage } from "./product-image";
 import giftStyles from "./gift-search.module.css";
+import NextLink from "next/link";
+import { PasswordField } from "./password-field";
 
 type Action = (state: Result, data: FormData) => Promise<Result>;
 
@@ -38,12 +40,16 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup" | "reset"; n
   const [result, submit] = useActionState(action, {});
   return <form action={submit} className="stack">
     <input type="hidden" name="next" value={next}/>
+    {mode !== "login" && <div className="form-note">
+      <span className="card-kicker">ÉTAPE {result.stage === "password" ? "3" : result.stage === "verify" ? "2" : "1"} SUR 3</span>
+      <p>{result.stage === "password" ? "Choisis ton mot de passe (8 caractères minimum)." : result.stage === "verify" ? `Saisis le code envoyé à ${result.email ?? "ton adresse mail"}.` : "Vérifie ton adresse mail pour sécuriser ton compte."}</p>
+    </div>}
     {!result.stage && <label>Adresse mail<input type="email" name="email" required autoComplete="email" placeholder="toi@exemple.fr"/></label>}
-    {mode === "login" && <label>Mot de passe<input type="password" name="password" required autoComplete="current-password"/></label>}
+    {mode === "login" && <PasswordField label="Mot de passe" name="password" autoComplete="current-password"/>}
     {result.stage === "verify" && <label>Code reçu par mail<input name="code" inputMode="numeric" autoComplete="one-time-code" required maxLength={12}/></label>}
     {result.stage === "password" && <>
-      <label>Nouveau mot de passe<input type="password" name="password" minLength={8} required autoComplete="new-password"/></label>
-      <label>Confirmer le mot de passe<input type="password" name="confirmation" minLength={8} required autoComplete="new-password"/></label>
+      <PasswordField label="Nouveau mot de passe" name="password" minLength={8} autoComplete="new-password"/>
+      <PasswordField label="Confirmer le mot de passe" name="confirmation" minLength={8} autoComplete="new-password"/>
     </>}
     <Feedback result={result}/>
     <Submit>{mode === "login" ? "Se connecter" : result.stage === "verify" ? "Vérifier le code" : result.stage === "password" ? "Enregistrer mon mot de passe" : "Recevoir un code"}</Submit>
@@ -118,7 +124,15 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
   const [showEditor, setShowEditor] = useState(!startWithSearch);
   const [ready, setReady] = useState(false);
   const importing = useRef(false);
+  const editor = useRef<HTMLFormElement>(null);
+  const focusEditor = useRef(false);
   useEffect(() => setReady(true), []);
+  useEffect(() => {
+    if (!showEditor || !focusEditor.current) return;
+    focusEditor.current = false;
+    editor.current?.scrollIntoView({ block: "start" });
+    editor.current?.querySelector<HTMLInputElement>('[name="name"]')?.focus({ preventScroll: true });
+  }, [showEditor]);
 
   function addLink(link: Link) {
     const parsed = safeLink(link.url);
@@ -130,6 +144,7 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
     const { description: _description, ...product } = link;
     setLinks((current) => [...current, { ...product, url: parsed.href, image: safeProductImage(link.image)?.href }]);
     setName((current) => current || link.name || "");
+    focusEditor.current = !showEditor;
     setShowEditor(true);
     return true;
   }
@@ -171,15 +186,17 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
     }
   }
 
-  return <div className="stack">
-    {(startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={!ready || loading || saving} importing={loading} links={links} suggestions={suggestions}
+  const catalogue = (startWithSearch || gift) && links.length < 20 && <GiftSearch disabled={!ready || loading || saving} importing={loading} links={links} suggestions={suggestions}
       editorVisible={showEditor} onChoose={(product) => {
       if (importing.current) return;
       if (!hasProductDetails(product)) void append(product.url, product);
       else if (addLink(product)) setNotice("Produit ajouté à la fiche.");
-    }}/>}
-    {showEditor && <form id="gift-editor" action={submit} className="panel stack" aria-label="Fiche cadeau">
+    }}/>;
+  return <div className="stack">
+    {gift ? <details className="panel"><summary>Ajouter un produit depuis le catalogue</summary>{catalogue}</details> : catalogue}
+    {showEditor && <form ref={editor} id="gift-editor" action={submit} className="panel stack" aria-label="Fiche cadeau">
       {startWithSearch && <h2>Ta fiche cadeau</h2>}
+      {!gift && !startWithSearch && <p className="form-note">Un nom suffit pour ajouter une idée. Tu peux aussi importer un lien marchand ci-dessous.</p>}
       <label>Nom du cadeau<input name="name" maxLength={200} required disabled={!ready || saving} value={name} onChange={(event) => setName(event.target.value)}/></label>
       <label>Description<textarea name="description" rows={4} maxLength={3000} placeholder="Tes précisions, tailles, couleurs… (facultatif)"
         disabled={!ready || saving} value={description} onChange={(event) => setDescription(event.target.value)}/></label>
@@ -213,7 +230,10 @@ export function GiftForm({ action, gift, suggestions }: { action: Action; gift?:
       </fieldset>
       <input type="hidden" name="links" value={JSON.stringify(links)}/>
       <Feedback result={result}/>
-      {!ready || loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
+      <div className="form-actions">
+        {!ready || loading || url.trim() ? <button type="submit" className="button" disabled>Enregistrer le cadeau</button> : <Submit>Enregistrer le cadeau</Submit>}
+        <NextLink className="button outline" href="/mes-cadeaux">Annuler</NextLink>
+      </div>
     </form>}
   </div>;
 }
